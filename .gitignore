@@ -1,0 +1,10 @@
+Recordings
+*.log
+Jeatson_Libruary_2023-09-27.zip
+Jetson Libruary.zip
+Jetson_Lib_23_11_8.zip
+*.txt
+.UAV_Code.py.swp
+*.conf
+!Configs/default.conf
+!Configs/Router_network.conf
