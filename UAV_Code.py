@@ -1,11 +1,7 @@
 import atexit
-import math
 import sys
 import time
 from threading import Thread
-import jetson_utils
-import jetson_inference
-from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from Networking import Network
 from Detector import Detector
@@ -22,6 +18,8 @@ class Main:
                                                dir_name=conf_dict['DETECTION']['directory'],
                                                camera_pitch=float(conf_dict['DETECTION']['camera_pitch']),
                                                GPS_node=self.GPS,
+                                               spread=float(conf_dict['DETECTION']['camera_sep']),
+                                               fov=float(conf_dict['DETECTION']['camera_fov']),
                                                flip=bool(conf_dict['DETECTION']['flip']))
         self.Network = Network((conf_dict['NETWORKING']['GROUND_STATION_IP'],
                                 conf_dict['NETWORKING']['GROUND_STATION_PORT']),

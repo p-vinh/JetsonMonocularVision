@@ -39,24 +39,23 @@ class Network:
 
     def loop(self):
         last_log = 0.0
+        persons_loc, detection_timestamp = self.detectNet.get_data()
         while self.is_rinning:
             gs_received_data = self.receive_data(self.GS)
             if gs_received_data == '1':
                 print("NTWORKING:   Sending persons location (manual overwrite)")
                 self.last_cords_send_timestamp = time.time()
-                self.send_to_HUSKY(self.detectNet.persons_cords)
+                self.send_to_HUSKY(persons_loc)
             if time.time() - last_log >= self.LOG_INTERVAL:
                 last_log = time.time()
                 while not self.GPS.allow_read:
                     pass
                 self.send_to_GS(self.GPS.loc)
-            while not self.detectNet.allow_read:
-                pass
-            if self.detectNet.persons_cords is not None \
-                    and self.last_cords_send_timestamp + self.cooldown < self.detectNet.detection_timestamp:
+            if persons_loc is not None \
+                    and self.last_cords_send_timestamp + self.cooldown < detection_timestamp:
                 print("\n!!!\n!!!\nNTWORKING:   Sending location to the HUSKY\n!!!\n!!!")
                 self.last_cords_send_timestamp = time.time()
-                self.send_to_HUSKY(self.detectNet.persons_cords)
+                self.send_to_HUSKY(persons_loc)
 
     def connect(self, IP_Port_dict: dict):
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

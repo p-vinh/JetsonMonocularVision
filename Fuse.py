@@ -12,7 +12,6 @@
         else:
             print("Threshold is not reached")
     Example use code provided at the bottom of the file under "if __name__ == '__main__':".
-
 """
 
 
