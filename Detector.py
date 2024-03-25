@@ -1,3 +1,13 @@
+"""
+    This class runs geolocation method inside a thread and provides a thread safe way of getting it into other
+    threads. in order to safely get data from this class use getter methods: "get_person_loc()" "get_detection_time()"
+    "get_data()". Geolocation and detection are done in method thread_loop() of the class DetectorThreadRunner.py. This
+    is done so that variables used for other threads would not interfere with variables used inside the thread opening
+    up potential thread conflicts. DO NOT BYPASS GETTER METHODS OF THIS CLASS AND READ CLASS ATTRIBUTES VALUES STRAIGHT
+    FROM THE CLASS INSTANCE. When shutting down the program run "kill()" method to nicely kill the function. Otherwise,
+    the thread will still live and keep cameras and GPS USB port captured.
+"""
+
 import atexit
 import time
 from threading import Thread
@@ -20,7 +30,6 @@ class Detector:
             self.t_runner.swap_cameras()
 
         self.isRunning = True
-        self.allow_read = True
         self.thread = Thread(target=self.loop, args=())
         self.t_lock = Thread.Lock()
         self.thread.deamon = True
@@ -66,7 +75,7 @@ class Detector:
         self.isRunning = False
         self.thread.join()
         self.t_runner.kill()
-        self.logfile.write("Thread killed, closing the file.")
+        self.logfile.write("Detector thread killed, closing the file.")
         self.logfile.close()
 
 

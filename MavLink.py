@@ -64,8 +64,17 @@ class MavLink:
             time.sleep(0.1)
 
     def get_persons_GPS(self, distance, angle, cords, vertical_angle=0, mount_pitch=0):
+        # "angle" is measured from a ray going directly to the right, but GPS need it to be relative to the ray going
+        # straight forward. This does that conversion
         offset = angle - 90
+        # Sometimes targets are located low down. In that case actual distance from topdown, is smaller than direct
+        # distance from cameras to the target. GPS geolocation only needs distance in topdown perspective. This
+        # calculation converts direct distance to topdown distance.
         distance_adj = math.cos(math.radians(abs(vertical_angle + mount_pitch))) * distance
+        # If no GPS coordinates were provided then use current GPS coordinates, otherwise use provided GPS coordinates.
+        # This if statement converts longitude and latitude values into geopy.Point class instance. Used for GPS
+        # coordinate generation.
+        # TODO: When updating threading make this GPS coordinate and heading read thread safe.
         if cords is not None:
             drone_GPS = geopy.Point(cords['lat'], cords['lon'])
             hdg = cords['hdg']
@@ -79,6 +88,11 @@ class MavLink:
 
         # print("MAVLINK GPS:   Direction to the person is:", (hdg + offset))
         print("MAVLINK GPS:   Distance adjusted:", distance_adj)
+        # Combine distance from topdown perspective, GPS location of when images were captured and cardinal direction
+        # pointing to the target to get GPS location of the target. Cardinal direction to the target is calculated by
+        # combining heading of the GPS location and angle that measures deviation from ray pointing forwards and ray
+        # pointing to the target. If cameras are pointing in the same direction as GPS of the drone is facing then ray
+        # pointing forwards and heading is the same ray.
         person_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
         return {'lat': person_GPS.latitude, 'lon': person_GPS.longitude}
 
