@@ -13,7 +13,7 @@ from Triangulation import stereo_vision
 
 
 class DetectorThreadRunner:
-    def __init__(self, l_camera, r_camera, pitch, spread, fov, GPS_node, log_file):
+    def __init__(self, l_camera, r_camera, pitch, spread, fov, t_fuse, GPS_node, log_file):
         self.l_camera = l_camera
         self.r_camera = r_camera
         self.pitch = pitch
@@ -24,7 +24,10 @@ class DetectorThreadRunner:
         self.person_loc = None
         self.detection_time = None
         self.log_f = log_file
-        self.detect_fuse = Fuse.Fuse()
+        if t_fuse is None:
+            self.detect_fuse = Fuse.Fuse()
+        else:
+            self.detect_fuse = t_fuse
 
     def swap_cameras(self):
         self.l_camera, self.r_camera = self.r_camera, self.l_camera

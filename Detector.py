@@ -10,21 +10,24 @@
 
 import atexit
 import time
+import sys
 from threading import Thread
 from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
+from Load_Config import Config
+from Fuse import Fuse
 
 
 class Detector:
     def __init__(self, left_input, right_input, left_save_name, right_save_name, dir_name, GPS_node: MavLink,
-                 camera_pitch, spread=0.8636, fov=62.2, flip=False):
+                 camera_pitch, spread=0.8636, fov=62.2, threshold_fuse=None, flip=False):
         self.detection_timestamp = 0
         self.persons_cords = None
         self.logfile = open("Detector_last_log.log", "w")
         self.t_runner = DetectorThreadRunner(Jetson_Camera(str(left_input), dir_name, left_save_name, flip),
                                              Jetson_Camera(str(right_input), dir_name, right_save_name, flip),
-                                             pitch=camera_pitch, spread=spread, fov=fov, GPS_node=GPS_node,
+                                             pitch=camera_pitch, spread=spread, fov=fov, t_fuse=threshold_fuse, GPS_node=GPS_node,
                                              log_file=self.logfile)
         if flip:
             self.t_runner.swap_cameras()
@@ -84,6 +87,8 @@ def kill(core):
 
 
 if __name__ == '__main__':
-    GPS = MavLink("/dev/ttyACM0", 57600)
-    detector = Detector("0", "1", "test_left", "test_left", "./Recordings", GPS, 0, flip=True)
+    config_dict = Config(sys.argv[1])
+    GPS = MavLink(config_dict.main_dict['MAVLINK']['directory'], config_dict.main_dict['MAVLINK']['baud'])
+    fuse = Fuse(config_dict=config_dict.main_dict['DETECTION_FUSE'])
+    detector = Detector("0", "1", "test_left", "test_left", "./Recordings", fuse, GPS, 0, flip=True)
     atexit.register(kill, detector)
