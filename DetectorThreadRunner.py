@@ -88,9 +88,8 @@ class DetectorThreadRunner:
                 # If fuse fused, that there were multiple high confidence detection in a short period of time. So,
                 # a triangulation is performed and the results of this triangulation will be sent to other threads.
                 self.person_loc, self.detection_time = self.get_persons_loc(l_image, best_detection_l,
-                                                                            best_detection_r, image_location,
-                                                                            self.spread, self.fov,
-                                                                            print_mode="h")
+                                                                            best_detection_r, self.spread, self.fov,
+                                                                            image_location, print_mode="h")
             else:
                 # low confidence triangulation, just prints to a file. Results of this triangulation will not be sent to
                 # other threads.

@@ -16,8 +16,7 @@
 
 
 class Fuse:
-    def __init__(self, threshold: float = 5, reward: float = 1, punishment: float = 0.2, minimum: float = None,
-                 maximum: float = None, ):
+    def __init__(self, threshold=5, reward=1, punishment=0.2, minimum=None, maximum=None, ):
         self.t_hold = threshold
         self.reward_val = reward
         self.fine = punishment
@@ -29,7 +28,7 @@ class Fuse:
             self.maximum = threshold + reward
         else:
             self.maximum = maximum
-        self.value = 0.0
+        self.value = float(self.minimum)
         self.flag = False
 
     def __init__(self, config_dict: dict):
@@ -38,29 +37,31 @@ class Fuse:
         :type config_dict: dict
         """
         if 'threshold' in config_dict:
-            self.t_hold = config_dict['threshold']
+            self.t_hold = float(config_dict['threshold'])
         else:
             self.t_hold = 5
 
         if 'reward' in config_dict:
-            self.reward_val = config_dict['reward']
+            self.reward_val = float(config_dict['reward'])
         else:
             self.reward_val = 1
 
         if 'fine' in config_dict:
-            self.fine = config_dict['fine']
+            self.fine = float(config_dict['fine'])
         else:
             self.fine = 0.2
 
         if 'minimum' in config_dict:
-            self.minimum = config_dict['minimum']
+            self.minimum = float(config_dict['minimum'])
         else:
             self.minimum = 0
 
         if 'maximum' in config_dict:
-            self.maximum = config_dict['maximum']
+            self.maximum = float(config_dict['maximum'])
         else:
             self.maximum = 6
+        self.value = float(self.minimum)
+        self.flag = False
 
     def punish(self):
         self.value -= self.fine
