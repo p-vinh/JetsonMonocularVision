@@ -4,26 +4,31 @@
    operations done on those variables are thread safe. DO NOT BYPASS Detector.py AND READ FOM THIS CLASSES INSTANCE
    ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 """
-
+import requests
+import base64
 import math
 import time
 import Fuse
 import jetson.inference
 import jetson.utils
 from Triangulation import stereo_vision
-
+from dotenv import load_dotenv
 
 class DetectorThreadRunner:
     def __init__(
         self, l_camera, r_camera, pitch, spread, fov, t_fuse, GPS_node, log_file
     ):
+        MODEL_ID = load_dotenv().parsed["MODEL_ID"]
+        API_KEY = load_dotenv().parsed["API_KEY"]
+
         self.l_camera = l_camera
         self.r_camera = r_camera
         self.pitch = pitch
         self.spread = spread
         self.fov = fov
         self.GPS = GPS_node
-        self.d_net = jetson.inference.detectNet("")
+        #self.d_net = jetson.inference.detectNet("")
+        self.url = f"http://localhost:9001/{MODEL_ID}/8?api_key={API_KEY}"
         self.person_loc = None
         self.detection_time = None
         self.log_f = log_file
@@ -61,10 +66,10 @@ class DetectorThreadRunner:
         while not self.GPS.allow_read:
             pass
         image_location = self.GPS.loc
-
-        # Use Jetson detect net to get a list of objects detected in left and right images
-        l_detections = self.d_net.Detect(l_image, overlay="box,labels,conf")
-        r_detections = self.d_net.Detect(r_image, overlay="box,labels,conf")
+        
+        # Get detections from both images.
+        l_detections = self.send_image_to_model(l_image)["predictions"]
+        r_detections = self.send_image_to_model(r_image)["predictions"]
 
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
@@ -117,29 +122,34 @@ class DetectorThreadRunner:
             self.person_loc = person_location_internal
             self.detection_time = time_stamp_internal
 
+    def send_image_to_model(self, image):
+        response = requests.post(self.url, data={"image": base64.b64encode(image).decode('utf-8')})
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print("Error in request to model server ", response.status_code, response.text)
+            return None
+
     def kill(self):
         self.l_camera.kill()
         self.r_camera.kill()
 
     def get_best_detection(self, detections: list):
         best_detection = None
-        people_detected_list = []
+        weed_detected_list = []
 
         if len(detections) > 0:
             for detection in detections:
-                if self.d_net.GetClassDesc(detection.ClassID) == "person":
-                    people_detected_list.append(detection)
+                if detection["class"] == "weed":
+                    weed_detected_list.append(detection)
                     if (
                         best_detection is None
-                        or detection.Confidence > best_detection.Confidence
+                        or detection["confidence"] > best_detection["confidence"]
                     ):
                         best_detection = detection
-                # Detect weed
-                elif self.d_net.GetClassDesc(detection.ClassID) == "weed":
-                    print("Weed detected")
         else:
             return None, None
-        return best_detection, people_detected_list
+        return best_detection, weed_detected_list
 
     def get_persons_loc(
         self, image, best_l, best_r, spread, fov, location, print_mode=None
