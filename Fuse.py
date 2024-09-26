@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
     This is a simple threshold fuse class. If value become greater that the threshold, flag is set to True.
     If the value is below/falls below the threshold value, flag is set to False. It has minimum and maximum values.
@@ -16,21 +17,6 @@
 
 
 class Fuse:
-    def __init__(self, threshold=5, reward=1, punishment=0.2, minimum=None, maximum=None, ):
-        self.t_hold = threshold
-        self.reward_val = reward
-        self.fine = punishment
-        if minimum is None:
-            self.minimum = threshold - (5 * reward)
-        else:
-            self.minimum = minimum
-        if maximum is None:
-            self.maximum = threshold + reward
-        else:
-            self.maximum = maximum
-        self.value = 0.0
-        self.flag = False
-
     def __init__(self, config_dict: dict):
         """
 
@@ -60,6 +46,8 @@ class Fuse:
             self.maximum = config_dict['maximum']
         else:
             self.maximum = 6
+        self.value = float(self.minimum)
+        self.flag = False
 
     def punish(self):
         self.value -= self.fine

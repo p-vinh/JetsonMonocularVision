@@ -24,10 +24,7 @@ class DetectorThreadRunner:
         self.person_loc = None
         self.detection_time = None
         self.log_f = log_file
-        if t_fuse is None:
-            self.detect_fuse = Fuse.Fuse()
-        else:
-            self.detect_fuse = t_fuse
+        self.detect_fuse = Fuse.Fuse(t_fuse)
 
     def swap_cameras(self):
         self.l_camera, self.r_camera = self.r_camera, self.l_camera
@@ -57,11 +54,15 @@ class DetectorThreadRunner:
         while not self.GPS.allow_read:
             pass
         image_location = self.GPS.loc
-
-        # Use Jetson detect net to get a list of objects detected in left and right images
-        l_detections = self.d_net.Detect(l_image, overlay="box,labels,conf")
-        r_detections = self.d_net.Detect(r_image, overlay="box,labels,conf")
-
+        
+        try:
+            # Use Jetson detect net to get a list of objects detected in left and right images
+            if l_image is not None:
+               l_detections = self.d_net.Detect(l_image, overlay="box,labels,conf")
+            if r_image is not None: 
+               r_detections = self.d_net.Detect(r_image, overlay="box,labels,conf")
+        except Exception as e:
+            print("Error: ", e)
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
         best_detection_l, all_detections_l = self.get_best_detection(l_detections)

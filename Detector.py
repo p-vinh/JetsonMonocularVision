@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
     This class runs geolocation method inside a thread and provides a thread safe way of getting it into other
     threads. in order to safely get data from this class use getter methods: "get_person_loc()" "get_detection_time()"
@@ -11,7 +12,7 @@
 import atexit
 import time
 import sys
-from threading import Thread
+from threading import Thread, Lock
 from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
@@ -34,7 +35,7 @@ class Detector:
 
         self.isRunning = True
         self.thread = Thread(target=self.loop, args=())
-        self.t_lock = Thread.Lock()
+        self.t_lock = Lock()
         self.thread.deamon = True
 
         time.sleep(2.0)
