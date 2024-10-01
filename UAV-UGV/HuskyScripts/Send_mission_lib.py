@@ -5,10 +5,9 @@ import actionlib
 import rospy
 import cpr_gps_navigation_msgs.msg
 import utm
-import geometry_msgs.msg
+
 import cpr_gps_navigation_msgs.srv
 from robot_localization.srv import SetDatum
-from geographic_msgs.msg import GeoPose
 
 def find_utm_coords(lat, lon):
     u = utm.from_latlon(lat, lon)
@@ -143,8 +142,11 @@ def set_tolerance(goal, m, rad):
 '''
 
 
-def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
+def send_mission(goal_dict, datum_dict={}, viapoints_list=[], theta=30,
                  tolerance_rad=0.2, tolerance_m=0.1):
+
+    if datum_dict is None:
+        datum_dict = get_position_husky()
 
     datum_lat_lon = set_datum(datum_dict)
 
@@ -190,7 +192,8 @@ def get_position_husky():
     except rospy.ServiceException as e:
         print("Service call failed")
         return None
-    
+
+#=============TESTING================
 if __name__ == '__main__':
     viapoints = []
     viapoints = [{"lat": 34.059416, "lon": -117.821077}, {"lat": 34.059372, "lon": -117.820900}]
@@ -203,8 +206,6 @@ if __name__ == '__main__':
     try:
         rospy.init_node('Mission_library')
   
-        # Get the datum to the current position of the Husky
-        datum = get_position_husky()
         res = send_mission(goal_point, datum, viapoints, theta, tolerance_rad, tolerance_m)
         if res:
              print("mission completed!")

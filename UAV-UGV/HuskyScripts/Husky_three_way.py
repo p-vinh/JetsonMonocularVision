@@ -11,7 +11,7 @@ import sys
 
 HEADERSIZE = 8
 LOG_INTERVAL = 1
-loc = {'lat': -91, 'lon': -181}
+loc = {'lat': None, 'lon': None}
 
 
 def recive_data(sock):
@@ -44,12 +44,14 @@ def send_data(data, sock, h_size):
 def update_location():
     loc = {'lat': data.latitude, 'lon': data.longitude}
 
+"""
+    Connects to the ground station and the drone. Receives data from the drone and sends data to the Send Mission Script.
+"""
+# GROUND_STATION = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# GROUND_STATION.connect(('192.168.1.4', 11234))
+# fcntl.fcntl(GROUND_STATION, fcntl.F_SETFL, os.O_NONBLOCK)
 
-GROUND_STATION = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-GROUND_STATION.connect(('192.168.1.4', 11234))
-fcntl.fcntl(GROUND_STATION, fcntl.F_SETFL, os.O_NONBLOCK)
-
-send_data('HUSKY', GROUND_STATION, HEADERSIZE)
+# send_data('HUSKY', GROUND_STATION, HEADERSIZE)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -60,7 +62,7 @@ clientsocket, address = s.accept()
 fcntl.fcntl(clientsocket, fcntl.F_SETFL, os.O_NONBLOCK)
 
 id = b''
-while len(id) == 0:
+while len(id) == 0: # Change this once the ground station is working
     id = recive_data(clientsocket)
 print("Drone connected")
 
@@ -75,7 +77,6 @@ target_loc = {'lat': -91, 'lon': -181}
 # subscribe to GPS topic and post it to loc dictionary
 # in the call back function do not forget
 last_log = time.time()
-# create a publisher
 
 rospy.init_node("comunication_node")
 
@@ -84,19 +85,23 @@ rospy.Subscriber("/piksi_position/navsatfix_spp", NavSatFix, update_location)
 print("publisher initialized")
 
 while True:
+    # Sends the location of the Husky to the ground station
     if time.time() - last_log >= LOG_INTERVAL:
         last_log = time.time()
         send_data(loc, GROUND_STATION, HEADERSIZE)
 
     target = recive_data(DRONE['socket'])
-    print(target)
-    if type(target) == type({}):
-        print("INFO: Recived target location: " + str(target))
-        target_loc = target
-        send_mission(target_loc, {"lat": 34.059319, "lon": -117.820521})
-        # publish location to the topic
-        msg = GPSFix()
-        msg.latitude = target_loc['lat']
-        msg.longitude = target_loc['lon']
-        pub.publish(msg)
+
+    # Make sure the target is a dictionary
+    if isinstance(target, dict):
+        print("INFO: Received target location: " + str(target))
+        # To prevent overloading the Husky's mission planner, only send the target location if it is different from the previous target location
+        if previous_target is None or (abs(target['lat'] - previous_target['lat']) > 0.0001 or abs(target['lon'] - previous_target['lon']) > 0.0001):
+            previous_target = target
+            target_loc = target
+            send_mission(target_loc)  # Datum is set to the position of the Husky, only sends the target location (lat/lon)
+            msg = GPSFix()
+            msg.latitude = target_loc['lat']
+            msg.longitude = target_loc['lon']
+            pub.publish(msg)
     time.sleep(0.4)
