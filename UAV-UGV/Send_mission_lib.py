@@ -5,8 +5,10 @@ import actionlib
 import rospy
 import cpr_gps_navigation_msgs.msg
 import utm
+import geometry_msgs.msg
 import cpr_gps_navigation_msgs.srv
-
+from robot_localization.srv import SetDatum
+from geographic_msgs.msg import GeoPose
 
 def find_utm_coords(lat, lon):
     u = utm.from_latlon(lat, lon)
@@ -23,7 +25,7 @@ def find_utm_coords(lat, lon):
 
 def set_datum(datum_dict):
     # No need to convert to utm because the API uses lat/lon
-    # datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
+    datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
 
     rospy.wait_for_service('/set_datum', timeout=2.0)
 
@@ -31,7 +33,7 @@ def set_datum(datum_dict):
         datum_service = rospy.ServiceProxy('/set_datum', cpr_gps_navigation_msgs.srv.TaskSrv)
         res = datum_service("", [datum_dict["lat"], datum_dict["lon"]], [])
         rospy.loginfo("Datum set, sleeping for 2 seconds: ", res)
-        return {"lat": datum_dict["lat"], "lon": datum_dict["lon"]}
+        return {"north": datum_north, "east": datum_east}
     except rospy.ServiceException as e:
         print("Service call failed")
         return None
@@ -144,9 +146,9 @@ def set_tolerance(goal, m, rad):
 def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
                  tolerance_rad=0.2, tolerance_m=0.1):
 
-    datum_dict = set_datum(datum_dict)
+    datum_lat_lon = set_datum(datum_dict)
 
-    if datum_dict is None:
+    if datum_lat_lon is None:
         return
 
     # sleep to make sure datum is set properly and ekfs are converged
@@ -157,10 +159,10 @@ def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
 
     # Waits until the action server has started up and started
     # listening for goals.
-    if client.wait_for_server(timeout=rospy.Duration(2.0)):
-        goal = create_goal(goal_dict, datum_dict)
+    if client.wait_for_server(timeout=rospy.Duration(5.0)):
+        goal = create_goal(goal_dict, datum_lat_lon)
 
-        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_dict)
+        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_lat_lon)
 
         set_final_heading(goal, theta)
 
@@ -175,25 +177,39 @@ def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
 
     return client.get_result()
 
-
+"""
+Gets the current position of the Husky in the form of a dictionary with keys "lat" and "lon"
+and sets the datum to that position.
+"""
+def get_position_husky():
+    rospy.wait_for_service('ekfs_initial_estimate', timeout = 5.0)
+    try:
+        get_position = rospy.ServiceProxy('ekfs_initial_estimate', cpr_gps_navigation_msgs.srv.TaskSrv)
+        rospy.loginfo("Setting datum to current position: ", get_position)
+        return get_position
+    except rospy.ServiceException as e:
+        print("Service call failed")
+        return None
+    
 if __name__ == '__main__':
+    viapoints = []
+    viapoints = [{"lat": 34.059416, "lon": -117.821077}, {"lat": 34.059372, "lon": -117.820900}]
+    goal_point = {"lat": 34.059545, "lon": -117.820869}
 
-    datum = {"lat": 34.059319, "lon": -117.820521}
-    # viapoints = [{"lat": 34.059360, "lon": -117.821234}, {"lat": 34.059223, "lon": -117.821100}]
-    # goal_point = {"lat": 34.059361, "lon": -117.820990}
-    viapoints = [{"lat": 34.059453, "lon": -117.821131}, {"lat": 34.059228, "lon": -117.821564}, {"lat": 34.059062, "lon": -117.821423}, {"lat": 34.059260, "lon": -117.821073}]
-    goal_point = {"lat": 34.059509, "lon": -117.820999}
-    theta = 30.0
+    theta = 30
     tolerance_m = 0.1
     tolerance_rad = 0.2
 
     try:
         rospy.init_node('Mission_library')
-        res = send_mission(goal_point, viapoints, datum, theta, tolerance_rad, tolerance_m)
+  
+        # Get the datum to the current position of the Husky
+        datum = get_position_husky()
+        res = send_mission(goal_point, datum, viapoints, theta, tolerance_rad, tolerance_m)
         if res:
-            print("mission completed!")
+             print("mission completed!")
         else:
-            print("mission failed!")
+             print("mission failed!")
     except rospy.ROSInterruptException:
         print("mission failed!")
         pass
