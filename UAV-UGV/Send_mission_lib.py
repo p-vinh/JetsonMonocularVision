@@ -1,10 +1,7 @@
 #! /usr/bin/env python
 
 from __future__ import print_function
-
-# Brings in the SimpleActionClient
 import actionlib
-
 import rospy
 import cpr_gps_navigation_msgs.msg
 import utm
@@ -25,15 +22,16 @@ def find_utm_coords(lat, lon):
 
 
 def set_datum(datum_dict):
-    datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
+    # No need to convert to utm because the API uses lat/lon
+    # datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
 
     rospy.wait_for_service('/set_datum', timeout=2.0)
 
     try:
         datum_service = rospy.ServiceProxy('/set_datum', cpr_gps_navigation_msgs.srv.TaskSrv)
-        res = datum_service("", [datum_north, datum_east], [])
-        rospy.loginfo("Datum set, sleeping for 2 seconds")
-        return {"north": datum_north, "east": datum_east}
+        res = datum_service("", [datum_dict["lat"], datum_dict["lon"]], [])
+        rospy.loginfo("Datum set, sleeping for 2 seconds: ", res)
+        return {"lat": datum_dict["lat"], "lon": datum_dict["lon"]}
     except rospy.ServiceException as e:
         print("Service call failed")
         return None
@@ -130,7 +128,7 @@ def set_tolerance(goal, m, rad):
     
     Theta is the direction in Husky will face at the end of the mission. Formatted as a float value.
     
-    # TODO: Figure out if theta is in rads or degrees
+    # TODO: Figure out if theta is in rads or degrees: Degrees
     
     # tolerance_rad is acceptable error of theta. Assumed to be measured in radians. Formatted as a float value.
     
