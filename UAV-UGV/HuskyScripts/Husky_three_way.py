@@ -11,6 +11,7 @@ import sys
 
 HEADERSIZE = 8
 LOG_INTERVAL = 1
+THRESHOLD = 0.0001
 loc = {'lat': None, 'lon': None}
 
 
@@ -96,7 +97,7 @@ while True:
     if isinstance(target, dict):
         print("INFO: Received target location: " + str(target))
         # To prevent overloading the Husky's mission planner, only send the target location if it is different from the previous target location
-        if previous_target is None or (abs(target['lat'] - previous_target['lat']) > 0.0001 or abs(target['lon'] - previous_target['lon']) > 0.0001):
+        if previous_target is None or (abs(target['lat'] - previous_target['lat']) > THRESHOLD or abs(target['lon'] - previous_target['lon']) > THRESHOLD):
             previous_target = target
             target_loc = target
             send_mission(target_loc)  # Datum is set to the position of the Husky, only sends the target location (lat/lon)
