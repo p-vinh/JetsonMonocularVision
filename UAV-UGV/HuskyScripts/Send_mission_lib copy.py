@@ -5,6 +5,7 @@ import actionlib
 import rospy
 import cpr_gps_navigation_msgs.msg
 import utm
+import asyncio
 
 import cpr_gps_navigation_msgs.srv
 from robot_localization.srv import SetDatum
@@ -69,26 +70,6 @@ def create_goal(goal_point, datum):
 
     return goal
 
-
-'''
-    Creates list of viapoins in utm format.
-    Also converts input list of viapoints from lon/lat
-    format into utm format
-'''
-
-
-def create_viapoints_list(viapoints_list, datum_dict):
-    result = []
-    for point in viapoints_list:
-        result.append(cpr_gps_navigation_msgs.msg.Waypoint())
-        utm_point = convert_point(point)
-        result[-1].x = utm_point["east"] - datum_dict["east"]
-        result[-1].y = utm_point["north"] - datum_dict["north"]
-
-    # result.reverse()
-    return result
-
-
 '''
     Sets final heading of the Husky.
 '''
@@ -135,14 +116,11 @@ def set_tolerance(goal, m, rad):
     
     # tolerance_m is acceptable error of the position of the Husky. Measured in meters, formatted as float.
     
-    
-    
-    
 
 '''
 
 
-def send_mission(goal_dict, datum_dict={}, viapoints_list=[], theta=30,
+async def send_mission(goal_list=[], datum_dict={}, theta=30,
                  tolerance_rad=0.2, tolerance_m=0.1):
 
     if datum_dict is None:
@@ -162,16 +140,13 @@ def send_mission(goal_dict, datum_dict={}, viapoints_list=[], theta=30,
     # Waits until the action server has started up and started
     # listening for goals.
     if client.wait_for_server(timeout=rospy.Duration(5.0)):
-        goal = create_goal(goal_dict, datum_lat_lon)
+        for goal in goal_list:
+            m_goal = await create_goal(goal, datum_lat_lon)
+            set_final_heading(m_goal, theta)
+            set_tolerance(m_goal, tolerance_m, tolerance_rad)
 
-        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_lat_lon)
-
-        set_final_heading(goal, theta)
-
-        set_tolerance(goal, tolerance_m, tolerance_rad)
-
-        # Sends the goal to the action server.
-        client.send_goal(goal)
+            # Sends the goal to the action server.
+            client.send_goal(goal)
     else:
         return False
 
