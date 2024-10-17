@@ -20,7 +20,7 @@ class DetectorThreadRunner:
         self.spread = spread
         self.fov = fov
         self.GPS = GPS_node
-        self.d_net = jetson_inference.detectNet()
+        self.d_net = jetson_inference.detectNet(model="model/best.onnx", labels="model/labels.txt", input_blob="input_0", output_blob="output_0")
         self.person_loc = None
         self.detection_time = None
         self.log_f = log_file

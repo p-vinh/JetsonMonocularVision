@@ -24,12 +24,12 @@ class Network:
         self.HUSKY_dict = HUSKY_dict
 
         print("NETWORKING:    GS dict", (self.GS_dict[0], int(self.GS_dict[1])))
-
-        self.GS = self.connect((self.GS_dict[0], int(self.GS_dict[1])))
+        print("NETWORKING:    HUSKY Dict", (self.HUSKY_dict[0], int(self.HUSKY_dict[1])))
+#        self.GS = self.connect((self.GS_dict[0], int(self.GS_dict[1])))
         self.HUSKY = self.connect((self.HUSKY_dict[0], int(self.HUSKY_dict[1])))
         time.sleep(0.3)
 
-        self.send_to_GS("DRONE")
+#        self.send_to_GS("DRONE")
         self.send_to_HUSKY("DRONE")
 
         self.is_rinning = True
@@ -50,7 +50,7 @@ class Network:
                 last_log = time.time()
                 while not self.GPS.allow_read:
                     pass
-                self.send_to_GS(self.GPS.loc)
+#                self.send_to_GS(self.GPS.loc)
             if persons_loc is not None \
                     and self.last_cords_send_timestamp + self.cooldown < detection_timestamp:
                 print("\n!!!\n!!!\nNTWORKING:   Sending location to the HUSKY\n!!!\n!!!")
@@ -104,4 +104,4 @@ class Network:
         self.is_rinning = False
         self.thread.join()
         self.HUSKY.close()
-        self.GS.close()
+ #       self.GS.close()
