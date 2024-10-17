@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 
 from __future__ import print_function
-
-# Brings in the SimpleActionClient
 import actionlib
 from geographic_msgs.msg import GeoPose
 from robot_localization.srv import *
@@ -11,6 +9,7 @@ import cpr_gps_navigation_msgs.msg
 import utm
 import cpr_gps_navigation_msgs.srv
 from sensor_msgs.msg import NavSatFix
+from robot_localization.srv import SetDatum
 
 def find_utm_coords(lat, lon):
     u = utm.from_latlon(lat, lon)
@@ -27,8 +26,6 @@ def find_utm_coords(lat, lon):
 
 
 def set_datum(datum_dict):
-    datum_points = []
-    print(datum_dict)
     datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
         
     rospy.wait_for_service('/set_datum',timeout = 2.0)
@@ -135,7 +132,7 @@ def set_tolerance(goal, m, rad):
     
     Theta is the direction in Husky will face at the end of the mission. Formatted as a float value.
     
-    # TODO: Figure out if theta is in rads or degrees
+    # TODO: Figure out if theta is in rads or degrees: Degrees
     
     # tolerance_rad is acceptable error of theta. Assumed to be measured in radians. Formatted as a float value.
     
@@ -148,14 +145,15 @@ def set_tolerance(goal, m, rad):
 '''
 
 
-def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
+def send_mission(goal_dict, datum_dict={}, viapoints_list=[], theta=30,
                  tolerance_rad=0.2, tolerance_m=0.1):
 
-    print("Setting Datum: ", datum_dict)
-    datum_dict = set_datum(datum_dict)
-
     if datum_dict is None:
-        print("Datum is null")
+        datum_dict = get_position_husky()
+
+    datum_lat_lon = set_datum(datum_dict)
+
+    if datum_lat_lon is None:
         return
 
     # sleep to make sure datum is set properly and ekfs are converged
@@ -166,8 +164,9 @@ def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
     # Waits until the action server has started up and started
     # listening for goals.
     if client.wait_for_server(timeout=rospy.Duration(5.0)):
-        goal = create_goal(goal_dict, datum_dict)
-        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_dict)
+        goal = create_goal(goal_dict, datum_lat_lon)
+
+        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_lat_lon)
 
         set_final_heading(goal, theta)
 
@@ -184,20 +183,23 @@ def send_mission(goal_dict, datum_dict, viapoints_list=[], theta=30,
 
     #return client.get_result()
 
-global msg_lat
-global msg_lon
 
-def callback(data):
-    global msg_lat, msg_lon
-    msg_lat = data.latitude
-    msg_lon = data.longitude
+"""
+Gets the current position of the Husky in the form of a dictionary with keys "lat" and "lon"
+and sets the datum to that position.
+"""
+def get_position_husky():
+    rospy.wait_for_service('ekfs_initial_estimate', timeout = 5.0)
+    try:
+        get_position = rospy.ServiceProxy('ekfs_initial_estimate', cpr_gps_navigation_msgs.srv.TaskSrv)
+        rospy.loginfo("Setting datum to current position: ", get_position)
+        return get_position
+    except rospy.ServiceException as e:
+        print("Service call failed")
+        return None
 
+#=============TESTING================
 if __name__ == '__main__':
-    lat , lon = None, None
-    datum = {"lat": lat, "lon": lon}
-    print ('HOO')
-    # viapoints = [{"lat": 34.059360, "lon": -117.821234}, {"lat": 34.059223, "lon": -117.821100}]
-    # goal_point = {"lat": 34.059361, "lon": -117.820990}
     viapoints = []
     viapoints = [{"lat": 34.059416, "lon": -117.821077}, {"lat": 34.059372, "lon": -117.820900}]
     goal_point = {"lat": 34.059545, "lon": -117.820869}
@@ -205,23 +207,9 @@ if __name__ == '__main__':
     theta = 30
     tolerance_m = 0.1
     tolerance_rad = 0.2
-    global msg_lon
-    global msg_lat
-    try:
-        rospy.init_node('Mission_library')
-        sub = rospy.Subscriber('/piksi_position/navsatfix_spp', NavSatFix, callback)
-        msg_lon = None
-        msg_lat = None
-        while True:
-             if msg_lat is not None and msg_lon is not None:
-                   lat = msg_lat
-                   lon = msg_lon
-                   datum = {"lat": lat, "lon": lon}
-                   break
 
-        #while not rospy.is_shutdown():
-        print("Send mission: " + str(datum))
-        res = send_mission(goal_point, datum, viapoints, theta, tolerance_rad, tolerance_m)
+    try:
+        res = send_mission(goal_point, datum=None, viapoints, theta, tolerance_rad, tolerance_m)
         if res:
              print("mission completed!")
         else:
