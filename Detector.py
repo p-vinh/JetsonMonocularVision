@@ -38,7 +38,7 @@ class Detector:
         self.t_lock = Lock()
         self.thread.deamon = True
 
-        time.sleep(2.0)
+        time.sleep(10.0)
         self.thread.start()
 
     def loop(self):

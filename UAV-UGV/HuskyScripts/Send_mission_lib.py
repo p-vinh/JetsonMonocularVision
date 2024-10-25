@@ -2,17 +2,20 @@
 
 from __future__ import print_function
 import actionlib
+from geographic_msgs.msg import GeoPose
+from robot_localization.srv import *
 import rospy
 import cpr_gps_navigation_msgs.msg
 import utm
-
 import cpr_gps_navigation_msgs.srv
+from sensor_msgs.msg import NavSatFix
 from robot_localization.srv import SetDatum
 
 def find_utm_coords(lat, lon):
     u = utm.from_latlon(lat, lon)
     east = u[0]
     north = u[1]
+    print (north, east)
     return north, east
 
 
@@ -23,20 +26,23 @@ def find_utm_coords(lat, lon):
 
 
 def set_datum(datum_dict):
+<<<<<<< HEAD
     # No need to convert to utm because the API uses lat/lon
     print(datum_dict)
+=======
+>>>>>>> cc812c100236591b0ad9d0a86ee60eb5847922cd
     datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
-
-    rospy.wait_for_service('/set_datum', timeout=2.0)
-
+        
+    rospy.wait_for_service('/set_datum',timeout = 2.0)
+ 
     try:
-        datum_service = rospy.ServiceProxy('/set_datum', cpr_gps_navigation_msgs.srv.TaskSrv)
-        res = datum_service("", [datum_dict["lat"], datum_dict["lon"]], [])
-        rospy.loginfo("Datum set, sleeping for 2 seconds: ", res)
-        return {"north": datum_north, "east": datum_east}
+       datum_service = rospy.ServiceProxy('/set_datum', cpr_gps_navigation_msgs.srv.TaskSrv)
+       res = datum_service("", [datum_north, datum_east], [])
+       rospy.loginfo("Datum set, sleeping for 2 seconds")
+       return {"north": datum_north, "east": datum_east}
     except rospy.ServiceException as e:
-        print("Service call failed")
-        return None
+       print("Service call failed")
+       return None
 
 
 '''
@@ -45,6 +51,7 @@ def set_datum(datum_dict):
 
 
 def convert_point(point):
+    print(point)
     north, east = find_utm_coords(point["lat"], point["lon"])
     return {"north": north, "east": east}
 
@@ -159,7 +166,6 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
 
     # Creates a SimpleActionClient, passing the type of the action
     client = actionlib.SimpleActionClient('missionplan', cpr_gps_navigation_msgs.msg.MissionAction)
-
     # Waits until the action server has started up and started
     # listening for goals.
     if client.wait_for_server(timeout=rospy.Duration(5.0)):
@@ -170,15 +176,18 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
         set_final_heading(goal, theta)
 
         set_tolerance(goal, tolerance_m, tolerance_rad)
-
         # Sends the goal to the action server.
         client.send_goal(goal)
+        client.wait_for_result()
+
+        return client.get_result()
     else:
         return False
 
-    client.wait_for_result()
+    #client.wait_for_result()
 
-    return client.get_result()
+    #return client.get_result()
+
 
 """
 Gets the current position of the Husky in the form of a dictionary with keys "lat" and "lon"

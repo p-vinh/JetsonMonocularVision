@@ -23,27 +23,27 @@ class Fuse:
         :type config_dict: dict
         """
         if 'threshold' in config_dict:
-            self.t_hold = config_dict['threshold']
+            self.t_hold = int(config_dict['threshold'])
         else:
             self.t_hold = 5
 
         if 'reward' in config_dict:
-            self.reward_val = config_dict['reward']
+            self.reward_val = int(config_dict['reward'])
         else:
             self.reward_val = 1
 
         if 'fine' in config_dict:
-            self.fine = config_dict['fine']
+            self.fine = float(config_dict['fine'])
         else:
             self.fine = 0.2
 
         if 'minimum' in config_dict:
-            self.minimum = config_dict['minimum']
+            self.minimum = int(config_dict['minimum'])
         else:
             self.minimum = 0
 
         if 'maximum' in config_dict:
-            self.maximum = config_dict['maximum']
+            self.maximum = int(config_dict['maximum'])
         else:
             self.maximum = 6
         self.value = float(self.minimum)
