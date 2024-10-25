@@ -24,6 +24,7 @@ def find_utm_coords(lat, lon):
 
 def set_datum(datum_dict):
     # No need to convert to utm because the API uses lat/lon
+    print(datum_dict)
     datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
 
     rospy.wait_for_service('/set_datum', timeout=2.0)
@@ -142,7 +143,7 @@ def set_tolerance(goal, m, rad):
 '''
 
 
-def send_mission(goal_dict, datum_dict={}, viapoints_list=[], theta=30,
+def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
                  tolerance_rad=0.2, tolerance_m=0.1):
 
     if datum_dict is None:
@@ -187,7 +188,8 @@ def get_position_husky():
     rospy.wait_for_service('ekfs_initial_estimate', timeout = 5.0)
     try:
         get_position = rospy.ServiceProxy('ekfs_initial_estimate', cpr_gps_navigation_msgs.srv.TaskSrv)
-        rospy.loginfo("Setting datum to current position: ", get_position)
+#        rospy.loginfo("Setting datum to current position: ", get_position)
+        print(get_position)
         return get_position
     except rospy.ServiceException as e:
         print("Service call failed")
@@ -199,14 +201,10 @@ if __name__ == '__main__':
     viapoints = [{"lat": 34.059416, "lon": -117.821077}, {"lat": 34.059372, "lon": -117.820900}]
     goal_point = {"lat": 34.059545, "lon": -117.820869}
 
-    theta = 30
-    tolerance_m = 0.1
-    tolerance_rad = 0.2
-
     try:
         rospy.init_node('Mission_library')
-  
-        res = send_mission(goal_point, datum, viapoints, theta, tolerance_rad, tolerance_m)
+
+        res = send_mission(goal_dict=goal_point, viapoints_list=viapoints, theta=30, tolerance_rad=0.1, tolerance_m=0.2)
         if res:
              print("mission completed!")
         else:
