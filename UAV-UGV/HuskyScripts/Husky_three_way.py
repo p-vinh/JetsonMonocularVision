@@ -95,7 +95,7 @@ while True:
     if time.time() - last_log >= LOG_INTERVAL:
         last_log = time.time()
  #       send_data(loc, GROUND_STATION, HEADERSIZE)
-        print("Sending data to ground station")
+#        print("Sending data to ground station")
     target = recive_data(DRONE['socket'])
     print(target)
     if type(target) == type({}):

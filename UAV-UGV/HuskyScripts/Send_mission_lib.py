@@ -26,11 +26,8 @@ def find_utm_coords(lat, lon):
 
 
 def set_datum(datum_dict):
-<<<<<<< HEAD
     # No need to convert to utm because the API uses lat/lon
     print(datum_dict)
-=======
->>>>>>> cc812c100236591b0ad9d0a86ee60eb5847922cd
     datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
         
     rospy.wait_for_service('/set_datum',timeout = 2.0)
