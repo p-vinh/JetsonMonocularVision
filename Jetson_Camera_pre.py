@@ -13,7 +13,8 @@ class Jetson_Camera:
         self.allow_read = True
 
         self.video_input_id = input_num
-        self.videoInput_setup = ["--input-width=1920", "--input-height=1080", "--input-rate=21.0"]
+        # Set the expected input size for the model
+        self.videoInput_setup = ["--input-width=1024", "--input-height=1024", "--input-rate=21.0"]
         if flip:
             self.videoInput_setup.append("--input-flip=rotate-180")
             print("CAMERA:    Added 180 deg rotation")
@@ -38,13 +39,21 @@ class Jetson_Camera:
                   continue
                
                self.allow_read = False
-               self.img = img_local
+               self.img = self.pre_process(img_local)
                self.allow_read = True
 
                jetson_utils.cudaDeviceSynchronize()
                self.output.Render(img_local)
         except Exception as e:
             print("Error: ", e)
+
+    def pre_process(self, img):
+        # Tiling the 1024x1024 image into 4 512x512 images
+        tiles = []
+
+        jetson_utils = jetson_utils.cudaAllocMapped(width=512, height=512, format="rgb8")
+        return img
+
     def is_thread_alive(self):
         return self.thread.isAlive()
 
