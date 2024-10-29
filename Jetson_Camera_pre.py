@@ -50,10 +50,21 @@ class Jetson_Camera:
     def pre_process(self, img):
         # Tiling the 1024x1024 image into 4 512x512 images
         tiles = []
+        
+        coords = [
+            (0, 0, 512, 512),
+            (512, 0, 1024, 512),
+            (0, 512, 512, 1024),
+            (512, 512, 1024, 1024)
+        ]
+        
+        for (x1, y1, x2, y2) in coords:
+            tile = jetson_utils.cudaAllocMapped(width=512, height=512, format="rgb8")
+            jetson_utils.cudaCrop(img, tile, x1, y1, x2, y2)
+            tiles.append(tile)
 
-        jetson_utils = jetson_utils.cudaAllocMapped(width=512, height=512, format="rgb8")
-        return img
-
+        return tiles
+    
     def is_thread_alive(self):
         return self.thread.isAlive()
 
