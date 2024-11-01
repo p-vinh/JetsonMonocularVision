@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 from __future__ import print_function
 import actionlib
@@ -27,7 +27,6 @@ def find_utm_coords(lat, lon):
 
 def set_datum(datum_dict):
     # No need to convert to utm because the API uses lat/lon
-    print(datum_dict)
     datum_north, datum_east = find_utm_coords(datum_dict["lat"], datum_dict["lon"])  # find utm coordinate of the datum
         
     rospy.wait_for_service('/set_datum',timeout = 2.0)
@@ -152,7 +151,7 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
 
     if datum_dict is None:
         datum_dict = get_position_husky()
-
+    print(datum_dict)
     datum_lat_lon = set_datum(datum_dict)
 
     if datum_lat_lon is None:
@@ -185,32 +184,45 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
 
     #return client.get_result()
 
+global msg_lat
+global msg_lon
+
+def callback(data):
+    global msg_lat, msg_lon
+    msg_lat = data.latitude
+    msg_lon = data.longitude
 
 """
 Gets the current position of the Husky in the form of a dictionary with keys "lat" and "lon"
 and sets the datum to that position.
 """
 def get_position_husky():
-    rospy.wait_for_service('ekfs_initial_estimate', timeout = 5.0)
     try:
-        get_position = rospy.ServiceProxy('ekfs_initial_estimate', cpr_gps_navigation_msgs.srv.TaskSrv)
-#        rospy.loginfo("Setting datum to current position: ", get_position)
-        print(get_position)
-        return get_position
-    except rospy.ServiceException as e:
-        print("Service call failed")
+       global msg_lon, msg_lat
+       datum = {"lat":None, "lon":None}
+       sub = rospy.Subscriber('/piksi_position/navsatfix_spp', NavSatFix, callback)
+       msg_lon, msg_lat = None, None
+      
+       while True:
+           if msg_lat is not None and msg_lon is not None:
+              datum["lat"] = msg_lat
+              datum["lon"] = msg_lon
+              break
+       return datum
+    except Exception as e:
+        print("Service call failed", e)
         return None
+
+
 
 #=============TESTING================
 if __name__ == '__main__':
-    viapoints = []
-    viapoints = [{"lat": 34.059416, "lon": -117.821077}, {"lat": 34.059372, "lon": -117.820900}]
-    goal_point = {"lat": 34.059545, "lon": -117.820869}
+    goal_point = {"lat": 34.0592418, "lon": -117.8204023}
 
     try:
         rospy.init_node('Mission_library')
 
-        res = send_mission(goal_dict=goal_point, viapoints_list=viapoints, theta=30, tolerance_rad=0.1, tolerance_m=0.2)
+        res = send_mission(goal_dict=goal_point)
         if res:
              print("mission completed!")
         else:
@@ -218,3 +230,4 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         print("mission failed!")
         pass
+

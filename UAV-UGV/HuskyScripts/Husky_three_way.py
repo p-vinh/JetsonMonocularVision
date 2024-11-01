@@ -84,10 +84,10 @@ target_loc = {'lat': -91, 'lon': -181}
 # in the call back function do not forget
 last_log = time.time()
 
-rospy.init_node("comunication_node")
+#rospy.init_node("comunication_node")
 
-pub = rospy.Publisher("/drone_goal", GPSFix, queue_size=10)
-rospy.Subscriber("/piksi_position/navsatfix_spp", NavSatFix, update_location)
+#pub = rospy.Publisher("/drone_goal", GPSFix, queue_size=10)
+#rospy.Subscriber("/piksi_position/navsatfix_spp", NavSatFix, update_location)
 print("publisher initialized")
 
 while True:
@@ -98,26 +98,21 @@ while True:
 #        print("Sending data to ground station")
     target = recive_data(DRONE['socket'])
     print(target)
-    if type(target) == type({}):
-        print("INFO: Recived target location: " + str(target))
-        target_loc = target
-        #send_mission(target_loc, {"lat": 34.059319, "lon": -117.820521})
-        # publish location to the topic
-        msg = GPSFix()
-        msg.latitude = target_loc['lat']
-        msg.longitude = target_loc['lon']
-        pub.publish(msg)
-
+    previous_target = None
     # Make sure the target is a dictionary
     if isinstance(target, dict):
+        target = {str(k) : v for k,v in target.items()}
+
         print("INFO: Received target location: " + str(target))
         # To prevent overloading the Husky's mission planner, only send the target location if it is different from the previous target location
         if previous_target is None or (abs(target['lat'] - previous_target['lat']) > THRESHOLD or abs(target['lon'] - previous_target['lon']) > THRESHOLD):
             previous_target = target
             target_loc = target
+
             send_mission(target_loc)  # Datum is set to the position of the Husky, only sends the target location (lat/lon)
-            msg = GPSFix()
-            msg.latitude = target_loc['lat']
-            msg.longitude = target_loc['lon']
-            pub.publish(msg)
+            previous_target = target_loc 
+#          msg = GPSFix()
+ #           msg.latitude = target_loc['lat']
+  #          msg.longitude = target_loc['lon']
+  #          pub.publish(msg)
     time.sleep(0.4)
