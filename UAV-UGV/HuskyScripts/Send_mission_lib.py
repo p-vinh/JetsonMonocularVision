@@ -148,7 +148,7 @@ def set_tolerance(goal, m, rad):
 
 def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
                  tolerance_rad=0.2, tolerance_m=0.1):
-
+    print("Sending mission: ", goal_dict)
     if datum_dict is None:
         datum_dict = get_position_husky()
     print(datum_dict)

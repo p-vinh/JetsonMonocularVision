@@ -9,12 +9,14 @@ import socket
 import pickle
 import time
 import sys
+import threading
 
 HEADERSIZE = 8
 LOG_INTERVAL = 1
 THRESHOLD = 0.0001
 loc = {'lat': None, 'lon': None}
-
+target_loc = {'lat': -91, 'lon': -181}
+previous_target = None
 
 def recive_data(sock):
     buffer = b''
@@ -44,8 +46,13 @@ def send_data(data, sock, h_size):
 
 
 def update_location():
+    global loc
     loc = {'lat': data.latitude, 'lon': data.longitude}
 
+def run_send_mission():
+    global target_loc
+    rospy.init_node("Mission_library", anonymous=True)
+    send_mission(target_loc)
 """
     Connects to the ground station and the drone. Receives data from the drone and sends data to the Send Mission Script.
 """
@@ -59,60 +66,66 @@ def update_location():
 
 #send_data('HUSKY', GROUND_STATION, HEADERSIZE)
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(('', 11234))
-s.listen(5)
+def main():
+    global previous_target, target_loc
 
-clientsocket, address = s.accept()
-fcntl.fcntl(clientsocket, fcntl.F_SETFL, os.O_NONBLOCK)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('', 11234))
+    s.listen(5)
 
-id = b''
-while len(id) == 0: # Change this once the ground station is working
-    id = recive_data(clientsocket)
-print("Drone connected")
+    clientsocket, address = s.accept()
+    fcntl.fcntl(clientsocket, fcntl.F_SETFL, os.O_NONBLOCK)
 
-DRONE = {'socket': None, 'addr': None}
+    id = b''
+    while len(id) == 0: # Change this once the ground station is working
+        id = recive_data(clientsocket)
+    print("Drone connected")
 
-if id == 'DRONE':
-    DRONE['socket'] = clientsocket
-    DRONE['addr'] = address
+    DRONE = {'socket': None, 'addr': None}
 
-target_loc = {'lat': -91, 'lon': -181}
+    if id == 'DRONE':
+        DRONE['socket'] = clientsocket
+        DRONE['addr'] = address
 
-# subscribe to GPS topic and post it to loc dictionary
-# in the call back function do not forget
-last_log = time.time()
 
-#rospy.init_node("comunication_node")
+    # subscribe to GPS topic and post it to loc dictionary
+    # in the call back function do not forget
+    last_log = time.time()
 
-#pub = rospy.Publisher("/drone_goal", GPSFix, queue_size=10)
-#rospy.Subscriber("/piksi_position/navsatfix_spp", NavSatFix, update_location)
-print("publisher initialized")
+    rospy.init_node("comunication_node")
 
-while True:
-    # Sends the location of the Husky to the ground station
-    if time.time() - last_log >= LOG_INTERVAL:
-        last_log = time.time()
- #       send_data(loc, GROUND_STATION, HEADERSIZE)
-#        print("Sending data to ground station")
-    target = recive_data(DRONE['socket'])
-    print(target)
-    previous_target = None
-    # Make sure the target is a dictionary
-    if isinstance(target, dict):
-        target = {str(k) : v for k,v in target.items()}
+    #pub = rospy.Publisher("/drone_goal", GPSFix, queue_size=10)
+    #rospy.Subscriber("/piksi_position/navsatfix_spp", NavSatFix, update_location)
+    #print("publisher initialized")
 
-        print("INFO: Received target location: " + str(target))
-        # To prevent overloading the Husky's mission planner, only send the target location if it is different from the previous target location
-        if previous_target is None or (abs(target['lat'] - previous_target['lat']) > THRESHOLD or abs(target['lon'] - previous_target['lon']) > THRESHOLD):
-            previous_target = target
-            target_loc = target
+    while True:
+        # Sends the location of the Husky to the ground station
+        if time.time() - last_log >= LOG_INTERVAL:
+            last_log = time.time()
+    #       send_data(loc, GROUND_STATION, HEADERSIZE)
+    #        print("Sending data to ground station")
+        target = recive_data(DRONE['socket'])
+        print(target)
+        # Make sure the target is a dictionary
+        if isinstance(target, dict):
+            target = {str(k) : v for k,v in target.items()}
 
-            send_mission(target_loc)  # Datum is set to the position of the Husky, only sends the target location (lat/lon)
-            previous_target = target_loc 
-#          msg = GPSFix()
- #           msg.latitude = target_loc['lat']
-  #          msg.longitude = target_loc['lon']
-  #          pub.publish(msg)
-    time.sleep(0.4)
+            print("INFO: Received target location: " + str(target))
+            # To prevent overloading the Husky's mission planner, only send the target location if it is different from the previous target location
+            if previous_target is None or (abs(target['lat'] - previous_target['lat']) > THRESHOLD or abs(target['lon'] - previous_target['lon']) > THRESHOLD):
+                previous_target = target
+                target_loc = target
+
+                mission_thread = threading.Thread(target=run_send_mission)
+                mission_thread.daemon = True
+                mission_thread.start()
+    #          msg = GPSFix()
+    #           msg.latitude = target_loc['lat']
+    #          msg.longitude = target_loc['lon']
+    #          pub.publish(msg)
+        time.sleep(0.4)
+
+
+if __name__ == "__main__":
+    main()
