@@ -51,7 +51,6 @@ def update_location():
 
 def run_send_mission():
     global target_loc
-    rospy.init_node("Mission_library", anonymous=True)
     send_mission(target_loc)
 """
     Connects to the ground station and the drone. Receives data from the drone and sends data to the Send Mission Script.

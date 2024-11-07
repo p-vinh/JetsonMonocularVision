@@ -33,7 +33,7 @@ def set_datum(datum_dict):
  
     try:
        datum_service = rospy.ServiceProxy('/set_datum', cpr_gps_navigation_msgs.srv.TaskSrv)
-       res = datum_service("", [datum_north, datum_east], [])
+       res = datum_service("", [datum_dict['lat'], datum_dict['lon']], [])
        rospy.loginfo("Datum set, sleeping for 2 seconds")
        return {"north": datum_north, "east": datum_east}
     except rospy.ServiceException as e:
