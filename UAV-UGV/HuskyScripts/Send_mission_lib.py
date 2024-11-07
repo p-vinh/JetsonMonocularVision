@@ -15,7 +15,6 @@ def find_utm_coords(lat, lon):
     u = utm.from_latlon(lat, lon)
     east = u[0]
     north = u[1]
-    print (north, east)
     return north, east
 
 
@@ -33,8 +32,9 @@ def set_datum(datum_dict):
  
     try:
        datum_service = rospy.ServiceProxy('/set_datum', cpr_gps_navigation_msgs.srv.TaskSrv)
-       res = datum_service("", [datum_dict['lat'], datum_dict['lon']], [])
+       res = datum_service("", [datum_dict["lat"], datum_dict["lon"]], [])
        rospy.loginfo("Datum set, sleeping for 2 seconds")
+       print("Result: ", res)
        return {"north": datum_north, "east": datum_east}
     except rospy.ServiceException as e:
        print("Service call failed")
@@ -47,7 +47,6 @@ def set_datum(datum_dict):
 
 
 def convert_point(point):
-    print(point)
     north, east = find_utm_coords(point["lat"], point["lon"])
     return {"north": north, "east": east}
 
@@ -152,9 +151,9 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
     if datum_dict is None:
         datum_dict = get_position_husky()
     print(datum_dict)
-    datum_lat_lon = set_datum(datum_dict)
+    datum_utm = set_datum(datum_dict)
 
-    if datum_lat_lon is None:
+    if datum_utm is None:
         return
 
     # sleep to make sure datum is set properly and ekfs are converged
@@ -165,9 +164,9 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
     # Waits until the action server has started up and started
     # listening for goals.
     if client.wait_for_server(timeout=rospy.Duration(5.0)):
-        goal = create_goal(goal_dict, datum_lat_lon)
+        goal = create_goal(goal_dict, datum_utm)
 
-        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_lat_lon)
+#        goal.mission.viapoints = create_viapoints_list(viapoints_list, datum_utm)
 
         set_final_heading(goal, theta)
 
@@ -217,7 +216,7 @@ def get_position_husky():
 
 #=============TESTING================
 if __name__ == '__main__':
-    goal_point = {"lat": 34.0592418, "lon": -117.8204023}
+    goal_point = {"lat": 34.0589160, "lon": -117.820518}
 
     try:
         rospy.init_node('Mission_library')
