@@ -10,6 +10,8 @@ import pickle
 import time
 import sys
 import threading
+import Arm
+import queue
 
 HEADERSIZE = 8
 LOG_INTERVAL = 1
@@ -105,7 +107,7 @@ def main():
     #       send_data(loc, GROUND_STATION, HEADERSIZE)
     #        print("Sending data to ground station")
         target = recive_data(DRONE['socket'])
-        print(target)
+#        print(target)
         # Make sure the target is a dictionary
         if isinstance(target, dict):
             target = {str(k) : v for k,v in target.items()}
@@ -127,4 +129,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+     main()
+#     Arm.publisher(['a', 'i', 'i', 'i', 'i'], 3)
+#     sock = Arm.soc1()
+#     Arm.Arm1(sock)
+#    Arm.publisher(['a', 'p', '255'], 3)
+#     Arm.Arm2(sock)
+#     Arm.publisher(['a', 'c', 'r'], 3)
+#     Arm.clo(sock)

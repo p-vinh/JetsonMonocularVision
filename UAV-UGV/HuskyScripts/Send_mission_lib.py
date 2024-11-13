@@ -146,7 +146,7 @@ def set_tolerance(goal, m, rad):
 
 
 def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
-                 tolerance_rad=0.2, tolerance_m=0.1):
+                 tolerance_rad=0.4, tolerance_m=0.2, wait_time=60):
     print("Sending mission: ", goal_dict)
     if datum_dict is None:
         datum_dict = get_position_husky()
@@ -173,9 +173,13 @@ def send_mission(goal_dict, datum_dict=None, viapoints_list=[], theta=30,
         set_tolerance(goal, tolerance_m, tolerance_rad)
         # Sends the goal to the action server.
         client.send_goal(goal)
-        client.wait_for_result()
 
-        return client.get_result()
+        if (client.wait_for_result(timeout=rospy.Duration(wait_time))):
+            return client.get_result()
+        else:
+            client.cancel_goal()
+            print("Mission took too long, moving on.")
+            return False
     else:
         return False
 
@@ -216,7 +220,7 @@ def get_position_husky():
 
 #=============TESTING================
 if __name__ == '__main__':
-    goal_point = {"lat": 34.0589160, "lon": -117.820518}
+    goal_point = {"lat": 34.0592138, "lon": -117.8204486}
 
     try:
         rospy.init_node('Mission_library')
