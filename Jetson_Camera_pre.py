@@ -30,6 +30,10 @@ class Jetson_Camera:
 
         # OpenCV video writer
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        
+        # if output path does not exist, create it
+        if not os.path.exists(recording_dir):
+            os.makedirs(recording_dir)
         self.output = cv2.VideoWriter(self.output_path, fourcc, 21.0, (800, 800))
 
         self.alive = True
@@ -57,8 +61,8 @@ class Jetson_Camera:
             print("Error: ", e)
 
     def pre_process(self, img):
-        # Resize the image to 800x800
-        img_resized = cv2.resize(img, (800, 800))
+        # Resize the image to 480x800
+        img_resized = cv2.resize(img, (480, 800))
         return img_resized
     
     def is_thread_alive(self):

@@ -11,7 +11,7 @@ import Fuse
 from ultralytics import YOLO
 from Triangulation import stereo_vision
 
-
+# Left camera will be used as a main camera. Right camera will be used as a reference camera.
 class DetectorThreadRunner:
     def __init__(self, l_camera, r_camera, pitch, spread, fov, t_fuse, GPS_node, log_file):
         self.l_camera = l_camera
@@ -20,7 +20,7 @@ class DetectorThreadRunner:
         self.spread = spread
         self.fov = fov
         self.GPS = GPS_node
-        self.d_net = YOLO('models/yolov5s.pt')
+        self.d_net = YOLO('models/weed_model.pt') # Trained YOLOv8 model
         self.person_loc = None
         self.detection_time = None
         self.log_f = log_file
