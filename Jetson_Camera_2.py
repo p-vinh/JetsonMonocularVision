@@ -4,7 +4,7 @@ from datetime import datetime
 from threading import Thread
 import jetson_utils
 
-
+# Will not be using, jetson_utils but instead using cv2.VideoCapture because we are using a Yolo model 
 class Jetson_Camera:
 
     def __init__(self, input_num, recording_dir, recording_name, flip=False):

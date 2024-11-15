@@ -94,6 +94,7 @@ class MavLink:
         # pointing to the target. If cameras are pointing in the same direction as GPS of the drone is facing then ray
         # pointing forwards and heading is the same ray.
         person_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
+        print("MAVLINK GPS:   Person GPS:", person_GPS.latitude, person_GPS.longitude)
         return {'lat': person_GPS.latitude, 'lon': person_GPS.longitude}
 
     def is_thread_alive(self):
