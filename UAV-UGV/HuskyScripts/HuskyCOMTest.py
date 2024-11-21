@@ -54,25 +54,6 @@ class Network:
 
         return soc
 
-    def receive_data(self, sock):
-        buffer = b''
-        try:
-            buffer = sock.recv(self.HEADERSIZE)
-        except socket.error as e:
-            err = e.args[0]
-            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                return b''
-            else:
-                print(e)
-                sys.exit(1)
-        if len(buffer) != 0:
-            print("alleget packet length: {}".format(buffer.decode("utf-8")))
-            full_msg = b''
-            while len(full_msg) < int(buffer):
-                full_msg = full_msg + sock.recv(int(buffer) - len(full_msg))
-            decode = pickle.loads(full_msg)
-            return decode
-
     def send_data(self, soc: socket, data, protocol):
         bit_data = pickle.dumps(data, protocol)
         message = '{:<{}}'.format(len(bit_data), self.HEADERSIZE).encode('utf-8') + bit_data
