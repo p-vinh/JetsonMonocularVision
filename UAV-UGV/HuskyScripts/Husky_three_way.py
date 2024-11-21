@@ -115,16 +115,17 @@ def main():
             print("INFO: Received target location: " + str(target))
             # To prevent overloading the Husky's mission planner, only send the target location if it is different from the previous target location
             if previous_target is None or (abs(target['lat'] - previous_target['lat']) > THRESHOLD or abs(target['lon'] - previous_target['lon']) > THRESHOLD):
-                previous_target = target
-                target_loc = target
-
-                mission_thread = threading.Thread(target=run_send_mission)
-                mission_thread.daemon = True
-                mission_thread.start()
-    #          msg = GPSFix()
-    #           msg.latitude = target_loc['lat']
-    #          msg.longitude = target_loc['lon']
-    #          pub.publish(msg)
+                    previous_target = target
+                    target_loc = target
+                    target_queue.put(target_loc)
+                    # To prevent overloading send missions, make sure only one mission thread is running at a time and iterate through the queue of target locations
+                    if threading.active_count() < 2:
+                        current_mission = threading.Thread(target=send_mission,daemon=True,args=(target_queue.get(),))
+                        current_mission.start()
+                    # Clean up any dead threads
+                    for thread in threading.enumerate():
+                        if not thread.is_alive():
+                            thread.join()
         time.sleep(0.4)
 
 
