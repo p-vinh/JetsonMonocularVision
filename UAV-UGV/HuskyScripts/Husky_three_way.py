@@ -19,6 +19,7 @@ THRESHOLD = 0.0001
 loc = {'lat': None, 'lon': None}
 target_loc = {'lat': -91, 'lon': -181}
 previous_target = None
+target_queue = queue.Queue()
 
 def recive_data(sock):
     buffer = b''
@@ -101,6 +102,7 @@ def main():
     #print("publisher initialized")
 
     while True:
+        active_threads = [thread.name for thread in threading.enumerate()]    
         # Sends the location of the Husky to the ground station
         if time.time() - last_log >= LOG_INTERVAL:
             last_log = time.time()
@@ -119,13 +121,12 @@ def main():
                     target_loc = target
                     target_queue.put(target_loc)
                     # To prevent overloading send missions, make sure only one mission thread is running at a time and iterate through the queue of target locations
-                    if threading.active_count() < 2:
-                        current_mission = threading.Thread(target=send_mission,daemon=True,args=(target_queue.get(),))
-                        current_mission.start()
-                    # Clean up any dead threads
-                    for thread in threading.enumerate():
-                        if not thread.is_alive():
-                            thread.join()
+        if not any("send_mission" in thread for thread in active_threads) and not target_queue.empty():
+            # Track how many send mission threads have been made
+            mission_n += 1
+            print("starting new mission #"+str(mission_n))
+            current_mission = threading.Thread(target=send_mission,daemon=True,args=(target_queue.get()),name="send_mission-"+str(mission_n))
+            current_mission.start()
         time.sleep(0.4)
 
 
