@@ -1,4 +1,4 @@
-
+#!/usr/bin/python3
 
 """
 This scripts pretends to be the Drone to test the communication between the Husky and the Drone.
