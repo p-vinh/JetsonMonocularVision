@@ -36,8 +36,8 @@ class Network:
 
     def loop(self):
         # Set example data to send to the Husky/ generate the last 3 digits of the GPS coordinates
-        lat = 34.059 + random.random() * 0.0001 - 0.00005
-        lon = -117.821 + random.random() * 0.0001 - 0.00005
+        lat = 34.059 + (random.random() * 0.0001 - 0.00005)
+        lon = -117.821 + (random.random() * 0.0001 - 0.00005)
         print("NETWORKING: Sending location to the Husky: ", lat, lon)
         persons_loc, detection_timestamp = {'lat': lat, 'lon': lon}, time.time()
         while self.is_rinning:
