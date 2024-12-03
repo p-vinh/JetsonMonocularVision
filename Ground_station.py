@@ -7,6 +7,7 @@ import pickle
 import sys
 import keyboard
 
+# WIP DONT USE
 
 HEADERSIZE = 8
 recipients = []
