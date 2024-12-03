@@ -41,6 +41,7 @@ class Jetson_Camera:
         self.thread.daemon = True
         self.thread.start()
 
+    # Only slice the image to 640x480 from the left camera/ keep the original image from the right camera
     def loop(self):
         try:
             while self.alive:
@@ -53,7 +54,12 @@ class Jetson_Camera:
                     img_local = cv2.rotate(img_local, cv2.ROTATE_180)
 
                 self.allow_read = False
-                self.img = self.pre_process(img_local)
+                
+                # Left camera will be used as a main camera. Right camera will be used as a reference camera.
+                if self.video_input_id == 0:
+                    self.img = self.pre_process(img_local)
+                else: # Right camera
+                    self.img = img_local
                 self.allow_read = True
 
                 self.output.write(img_local)
@@ -61,8 +67,11 @@ class Jetson_Camera:
             print("Error: ", e)
 
     def pre_process(self, img):
+
+        # Use roboflow's image slicing to get the top right corner of the image
+
         # Resize the image to 480x800
-        img_resized = cv2.resize(img, (480, 800))
+        img_resized = cv2.resize(img, (480, 640))
         return img_resized
     
     def is_thread_alive(self):

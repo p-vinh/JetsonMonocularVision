@@ -40,14 +40,14 @@ class DetectorThreadRunner:
         person_location_internal = None
         time_stamp_internal = None
 
-        # Get images from both cameras.
+        # Get images from both cameras. A list of images is returned from the camera thread. The first image in the top right corner of the original image.
         while not self.l_camera.allow_read:
             pass
-        l_images = self.l_camera.img
+        l_images = self.l_camera.img # TILES FROM THE LEFT CAMERA
 
         while not self.r_camera.allow_read:
             pass
-        r_images = self.r_camera.img
+        r_images = self.r_camera.img # Oringal image from the right camera as a reference
 
         # Get GPS location from Mavlink module. Scene GPS is read at about the same time its safe to assume that the
         # location stores is tah location at which those pictures were taken.
