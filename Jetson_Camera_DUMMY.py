@@ -1,6 +1,9 @@
 import os
 from datetime import datetime
 from threading import Thread
+import ultralytics
+import supervision as sv
+import numpy as np
 import cv2
 
 
@@ -15,7 +18,7 @@ class Jetson_Camera:
         self.flip = flip
 
         # Use Image as a test image
-        self.video_input = cv2.imread("test_images/test.jpg")
+        self.video_input = cv2.imread("test_images/test.jpg") # Image Size of the original image 4000x3000
 
         if self.video_input is None:
             print(f"Error: Could not open video input {self.video_input_id}")
@@ -48,15 +51,13 @@ class Jetson_Camera:
                 self.allow_read = True
 
         except Exception as e:
-            print("Error: ", e)
+            print("Error: ", e)    
 
     def pre_process(self, img):
-
-        # Use roboflow's image slicing to get the top right corner of the image
-
-        # Resize the image to 480x800
-        img_resized = cv2.resize(img, (480, 640))
-        return img_resized
+        # Use supervision's inference slicer to cut the image into 480x640
+        slicer = sv.InferenceSlicer(slice_size=(480, 640))
+        slices = slicer.slice_image(img)
+        return slices
     
     def is_thread_alive(self):
         return self.thread.is_alive()
@@ -70,7 +71,7 @@ class Jetson_Camera:
 
 # Example usage
 if __name__ == "__main__":
-    camera = Jetson_Camera(input_num=0, recording_dir=".", recording_name="test", flip=False)
+    camera = Jetson_Camera(input_num=0, recording_dir=".", recording_name="test", flip=False) # not going to be used for testing
     try:
         while camera.is_thread_alive():
             pass
