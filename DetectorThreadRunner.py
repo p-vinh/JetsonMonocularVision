@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
    The purpose of this class it to separate variables used inside a detection and geolocation thread and other threads
    that take data from that thread. Mixing up variables between two threads might cause thread conflicts, unless

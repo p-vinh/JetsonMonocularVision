@@ -15,8 +15,16 @@ class Jetson_Camera:
         self.video_input_id = input_num
         self.flip = flip
 
+        self.gstreamer_pipeline = (
+            f"nvarguscamerasrc sensor-id={self.video_input_id} ! "
+            "video/x-raw(memory:NVMM), width=1280, height=720, format=NV12, framerate=30/1 ! "
+            "nvvidconv flip-method=2 ! video/x-raw, width=800, height=800, format=BGRx ! "
+            "videoconvert ! video/x-raw, format=BGR ! appsink"
+        )
+
+
         # OpenCV video capture
-        self.video_input = cv2.VideoCapture(self.video_input_id)
+        self.video_input = cv2.VideoCapture(self.gstreamer_pipeline, cv2.CAP_GSTREAMER)
         if not self.video_input.isOpened():
             print(f"Error: Could not open video input {self.video_input_id}")
             return
