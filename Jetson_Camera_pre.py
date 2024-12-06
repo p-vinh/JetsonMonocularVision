@@ -54,25 +54,10 @@ class Jetson_Camera:
                     img_local = cv2.rotate(img_local, cv2.ROTATE_180)
 
                 self.allow_read = False
-                
-                # Left camera will be used as a main camera. Right camera will be used as a reference camera.
-                if self.video_input_id == 0:
-                    self.img = self.pre_process(img_local)
-                else: # Right camera
-                    self.img = img_local
-                self.allow_read = True
-
+                self.img = img_local
                 self.output.write(img_local)
         except Exception as e:
             print("Error: ", e)
-
-    def pre_process(self, img):
-
-        # Use roboflow's image slicing to get the top right corner of the image
-
-        # Resize the image to 480x800
-        img_resized = cv2.resize(img, (480, 640))
-        return img_resized
     
     def is_thread_alive(self):
         return self.thread.is_alive()
