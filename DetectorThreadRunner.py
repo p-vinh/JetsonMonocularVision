@@ -9,7 +9,12 @@ import math
 import time
 import Fuse
 from ultralytics import YOLO
+import supervision as sv
 from Triangulation import stereo_vision
+import numpy as np
+import cv2
+from sahi.predict import get_sliced_prediction 
+import os
 
 # Left camera will be used as a main camera. Right camera will be used as a reference camera.
 class DetectorThreadRunner:
@@ -20,7 +25,7 @@ class DetectorThreadRunner:
         self.spread = spread
         self.fov = fov
         self.GPS = GPS_node
-        self.d_net = YOLO('models/weed_model.pt') # Trained YOLOv8 model
+        self.d_net = YOLO('model/weed_model.pt') # Trained YOLOv8 model
         self.person_loc = None
         self.detection_time = None
         self.log_f = log_file
@@ -33,7 +38,7 @@ class DetectorThreadRunner:
         r_image = None
         l_image = None
         image_location = None
-        l_detections = None
+        l_detections = []
         r_detections = None
         best_detection_l = None
         best_detection_r = None
@@ -43,35 +48,26 @@ class DetectorThreadRunner:
         # Get images from both cameras. A list of images is returned from the camera thread. The first image in the top right corner of the original image.
         while not self.l_camera.allow_read:
             pass
-        l_images = self.l_camera.img # TILES FROM THE LEFT CAMERA
+        l_image = self.l_camera.img # TILES FROM THE LEFT CAMERA
 
         while not self.r_camera.allow_read:
             pass
-        r_images = self.r_camera.img # Oringal image from the right camera as a reference
-
+        r_image = self.r_camera.img # Oringal image from the right camera as a reference
+        
+        l_detections = self.pre_process(l_image)
+        
         # Get GPS location from Mavlink module. Scene GPS is read at about the same time its safe to assume that the
         # location stores is tah location at which those pictures were taken.
         while not self.GPS.allow_read:
             pass
         image_location = self.GPS.loc
         
-        try:
-            # Use Jetson detect net to get a list of objects detected in left and right images
-            l_results = self.d_net(l_images)
-            r_results = self.d_net(r_images)
-            
-            # Get the first detection from the list of detections.
-            # This is done because the first detection is the one with the highest confidence.
-            l_detections = l_results.pred[0]
-            r_detections = r_results.pred[0]
 
-        except Exception as e:
-            print("Error: ", e)
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
         best_detection_l, all_detections_l = self.get_best_detection(l_detections)
         # Do the same for right image
-        best_detection_r, all_detections_r = self.get_best_detection(r_detections)
+        # best_detection_r, all_detections_r = self.get_best_detection(r_detections)
 
         """
             For triangulation to work with multiple targets, triangulation code has to know which detection in left 
@@ -81,26 +77,27 @@ class DetectorThreadRunner:
             triangulation will be performed on those two detections. 
         """
 
-        if best_detection_l is None or best_detection_r is None:
-            # If only one of the cameras got a detection or neither, the that means it might be a false positive or,
-            # target is too far away. In ether case triangulation should be delayed. So, the fuse is punished (fined).
-            self.detect_fuse.punish()
-        else:
-            # If both images got a detection, the reward the fuse, indicating that detections is likely is not a false
-            # positive and target is close.
-            self.detect_fuse.reward()
-            if self.detect_fuse:
-                # If fuse fused, that there were multiple high confidence detection in a short period of time. So,
-                # a triangulation is performed and the results of this triangulation will be sent to other threads.
-                self.person_loc, self.detection_time = self.get_persons_loc(l_image, best_detection_l,
-                                                                            best_detection_r, image_location,
-                                                                            self.spread, self.fov,
-                                                                            print_mode="h")
-            else:
-                # low confidence triangulation, just prints to a file. Results of this triangulation will not be sent to
-                # other threads.
-                self.get_persons_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov,
-                                     image_location, print_mode="l")
+        # chaneg this to use the pre-processed images and not the fuse (threshold) class
+        # if best_detection_l is None or best_detection_r is None:
+        #     # If only one of the cameras got a detection or neither, the that means it might be a false positive or,
+        #     # target is too far away. In ether case triangulation should be delayed. So, the fuse is punished (fined).
+        #     self.detect_fuse.punish()
+        # else:
+        #     # If both images got a detection, the reward the fuse, indicating that detections is likely is not a false
+        #     # positive and target is close.
+        #     self.detect_fuse.reward()
+        #     if self.detect_fuse:
+        #         # If fuse fused, that there were multiple high confidence detection in a short period of time. So,
+        #         # a triangulation is performed and the results of this triangulation will be sent to other threads.
+        #         self.person_loc, self.detection_time = self.get_persons_loc(l_image, best_detection_l,
+        #                                                                     best_detection_r, image_location,
+        #                                                                     self.spread, self.fov,
+        #                                                                     print_mode="h")
+        #     else:
+        #         # low confidence triangulation, just prints to a file. Results of this triangulation will not be sent to
+        #         # other threads.
+        #         self.get_persons_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov,
+        #                              image_location, print_mode="l")
 
         if person_location_internal is not None:
             self.person_loc = person_location_internal
@@ -111,25 +108,25 @@ class DetectorThreadRunner:
         self.r_camera.kill()
 
     #TODO: Determine what is returned by the YOLOv8 model 
-    def get_best_detection(self, detections: list):
+    def get_best_detection(self, detections):
         best_detection = None
         weed_detected_list = []
 
-        if len(detections) > 0:
-            for detection in detections:
+        if detections is not None and len(detections) > 0:
+            for i in range(len(detections.class_id)):
                 # Check to see if the detection is a 'weed'
-                if detection.Label == 'weed':
-                    weed_detected_list.append(detection)
-                    if best_detection is None or detection[4] > best_detection[4]:
-                        best_detection = detection
+                if detections.class_id[i] == 1 and detections.data['class_name'][i] == 'weed':
+                    weed_detected_list.append(detections[i])
+                    if best_detection is None or detections.confidence[i] > best_detection.confidence:
+                        best_detection = detections[i]
         else:
             return None, None
         return best_detection, weed_detected_list
 
-    def get_persons_loc(self, image, best_l, best_r, spread, fov, location, print_mode=None):
+    def get_weed_loc(self, image, best_l, best_r, spread, fov, location, print_mode=None):
         time_stamp = None
         prefix = "Low confidence"
-        persons_cords_local = None
+        weed_cords_local = None
         # Triangulation function will perform calculations to get direct distance, horizontal angle, and a vertical
         # angle to the target. Returns None if calculation fails.
         distance, angle, vertical = stereo_vision(spread=spread,
@@ -139,10 +136,11 @@ class DetectorThreadRunner:
                                                   image_width=image.shape[1],
                                                   image_height=image.shape[0])
         if not math.isnan(distance):
-            # If triangulation calculation did not fail, then use "get_persons_GPS()" method to combine, GPS, heading,
+            # If triangulation calculation did not fail, then use "get_weed_GPS()" method to combine, GPS, heading,
             # horizontal and vertical angles, camera pitch angle, and distance to predict targets GPS location.
-            persons_cords_local = self.GPS.get_persons_GPS(distance, angle, location,
-                                                           vertical, self.pitch)
+            # weed_cords_local = self.GPS.get_weed_GPS(distance, angle, location,
+            #                                                vertical, self.pitch)
+            weed_cords_local = (0, 0)
             # Save the timestamp of when this triangulation happened.
             time_stamp = time.time()
             # Print to log file.
@@ -152,8 +150,28 @@ class DetectorThreadRunner:
                 self.log_f.write(prefix + " distance:" + str(distance) + "\n")
                 self.log_f.write(prefix + " horizontal angle:" + str(angle) + "\n")
                 self.log_f.write(prefix + " vertical angle:" + str(vertical) + "\n")
-                self.log_f.write(prefix + " coordinates:" + str(persons_cords_local) + "\n\n")
-            # Return persons GPS and time when this triangulation happened.
-            return persons_cords_local, time_stamp
+                self.log_f.write(prefix + " coordinates:" + str(weed_cords_local) + "\n\n")
+            # Return weed GPS and time when this triangulation happened.
+            return weed_cords_local, time_stamp
         # Return None when triangulation fails.
         return None, None
+
+    def callback(self, image_slice: np.ndarray) -> sv.Detections:
+        results = self.d_net(image_slice)[0]
+        detections = sv.Detections.from_ultralytics(results)
+
+        iou = 0.7
+        detections = detections.with_nms(iou, class_agnostic=True)
+        return detections
+
+    def pre_process(self, img):
+        try:
+            self.slicer = sv.InferenceSlicer(callback=self.callback, slice_wh=(480, 640), overlap_ratio_wh=(0.5, 0.5))
+            slices = self.slicer(img)
+
+            return slices
+        except RuntimeError as e:
+            if str(e) == 'cannot schedule new futures after interpreter shutdown':
+                print("Interpreter is shutting down, cannot schedule new futures.")
+            else:
+                raise e

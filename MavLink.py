@@ -1,11 +1,11 @@
 import atexit
 import math
 
-from pymavlink import mavutil
+# from pymavlink import mavutil
 from threading import Thread
 import time
-import geopy
-import geopy.distance
+# import geopy
+# import geopy.distance
 
 
 class MavLink:
@@ -18,8 +18,8 @@ class MavLink:
 
         self.is_running = True
 
-        self.connection = mavutil.mavlink_connection(device=connection_str, baud=baud)
-        self.connection.wait_heartbeat()
+        # self.connection = mavutil.mavlink_connection(device=connection_str, baud=baud)
+        # self.connection.wait_heartbeat()
 
         self.thread = Thread(target=self.loop, args=())
         self.thread.deamon = True
@@ -33,9 +33,14 @@ class MavLink:
         last_global_position_recv = time.time()
 
         while self.is_running:
-            message = self.connection.recv_match()
+            # message = self.connection.recv_match()
+            
+            # Fake message
+            message = None
+            
             if 90 >= self.loc['lat'] >= -90:
-                old_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
+                # old_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
+                pass
             else:
                 old_loc = None
             if message is not None and message.get_type() == 'GLOBAL_POSITION_INT':
@@ -48,7 +53,9 @@ class MavLink:
                 self.allow_read = True
                 last_global_position_recv = time.time()
                 if old_loc is not None:
-                    current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
+                    # current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
+                    pass
+                    
                     # print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
             if message is not None and time.time() - last_global_position_recv > self.GLOBAL_POSITION_TIMEOUT and message.get_type() == 'GPS_RAW_INT':
                 self.allow_read = False
@@ -59,11 +66,12 @@ class MavLink:
                 self.warning = "WARNING: No 'GLOBAL_POSITION_INT' detected within timeout window"
                 self.allow_read = True
                 if old_loc is not None:
-                    current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
+                    pass
+                    # current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
                     # print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
             time.sleep(0.1)
 
-    def get_persons_GPS(self, distance, angle, cords, vertical_angle=0, mount_pitch=0):
+    def get_weed_GPS(self, distance, angle, cords, vertical_angle=0, mount_pitch=0):
         # "angle" is measured from a ray going directly to the right, but GPS need it to be relative to the ray going
         # straight forward. This does that conversion
         offset = angle - 90
@@ -76,26 +84,28 @@ class MavLink:
         # coordinate generation.
         # TODO: When updating threading make this GPS coordinate and heading read thread safe.
         if cords is not None:
-            drone_GPS = geopy.Point(cords['lat'], cords['lon'])
+            # drone_GPS = geopy.Point(cords['lat'], cords['lon'])
             hdg = cords['hdg']
         else:
             while not self.allow_read:
                 pass
             if self.loc['hdg'] == 'None':
                 return None
-            drone_GPS = geopy.Point(self.loc['lat'], self.loc['lon'])
+            # drone_GPS = geopy.Point(self.loc['lat'], self.loc['lon'])
             hdg = self.loc['hdg']
 
-        # print("MAVLINK GPS:   Direction to the person is:", (hdg + offset))
+        # print("MAVLINK GPS:   Direction to the weed is:", (hdg + offset))
         print("MAVLINK GPS:   Distance adjusted:", distance_adj)
         # Combine distance from topdown perspective, GPS location of when images were captured and cardinal direction
         # pointing to the target to get GPS location of the target. Cardinal direction to the target is calculated by
         # combining heading of the GPS location and angle that measures deviation from ray pointing forwards and ray
         # pointing to the target. If cameras are pointing in the same direction as GPS of the drone is facing then ray
         # pointing forwards and heading is the same ray.
-        person_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
-        print("MAVLINK GPS:   Person GPS:", person_GPS.latitude, person_GPS.longitude)
-        return {'lat': person_GPS.latitude, 'lon': person_GPS.longitude}
+        # weed_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
+        # print("MAVLINK GPS:   WEED GPS:", weed_GPS.latitude, weed_GPS.longitude)
+        # return {'lat': weed_GPS.latitude, 'lon': weed_GPS.longitude}
+        
+        return None
 
     def is_thread_alive(self):
         return self.thread.is_alive()

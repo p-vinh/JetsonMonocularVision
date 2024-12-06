@@ -6,7 +6,7 @@ from Detector import Detector
 import sys
 import socket
 import errno
-import fcntl, os
+# import fcntl, os
 import pickle
 
 
@@ -63,7 +63,7 @@ class Network:
     def connect(self, IP_Port_dict: dict):
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         soc.connect(IP_Port_dict)
-        fcntl.fcntl(soc, fcntl.F_SETFL, os.O_NONBLOCK)
+        # fcntl.fcntl(soc, fcntl.F_SETFL, os.O_NONBLOCK)
         # soc.setblocking(True)
 
         return soc
