@@ -13,8 +13,8 @@ import atexit
 import time
 import sys
 from threading import Thread, Lock
-from Jetson_Camera_DUMMY import Jetson_Camera
-# from Jetson_Camera_pre import Jetson_Camera
+# from Jetson_Camera_DUMMY import Jetson_Camera
+from Jetson_Camera_pre import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
 from Load_Config import Config
