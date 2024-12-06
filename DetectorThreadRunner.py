@@ -9,11 +9,8 @@ import math
 import time
 import Fuse
 from ultralytics import YOLO
-import supervision as sv
 from Triangulation import stereo_vision
-import numpy as np
-import cv2
-from sahi.predict import get_sliced_prediction 
+from sahi.predict import predict
 import os
 
 # Left camera will be used as a main camera. Right camera will be used as a reference camera.
@@ -48,13 +45,30 @@ class DetectorThreadRunner:
         # Get images from both cameras. A list of images is returned from the camera thread. The first image in the top right corner of the original image.
         while not self.l_camera.allow_read:
             pass
-        l_image = self.l_camera.img # TILES FROM THE LEFT CAMERA
+        l_image = self.l_camera.img 
 
         while not self.r_camera.allow_read:
             pass
-        r_image = self.r_camera.img # Oringal image from the right camera as a reference
+        r_image = self.r_camera.img
         
-        l_detections = self.pre_process(l_image)
+        # Get detections from the YOLOv8 model through SAHI Helper
+        l_detections = predict(
+            model_type='yolov8',
+            model_path='model/weed_model.pt',
+            model_config_path='args_for_sahi.yaml',
+            model_device='cuda:0',
+            model_confidence_threshold=0.6,
+            postprocess_class_agnostic=True,
+            source=l_image,
+            slice_height=480,
+            slice_width=640,
+            overlap_height_ratio=0.2,
+            overlap_width_ratio=0.2,
+            visual_bbox_thickness=1,
+            visual_text_size=0.5,
+            visual_text_thickness=1,
+            export_pickle=False
+        )
         
         # Get GPS location from Mavlink module. Scene GPS is read at about the same time its safe to assume that the
         # location stores is tah location at which those pictures were taken.
@@ -155,23 +169,3 @@ class DetectorThreadRunner:
             return weed_cords_local, time_stamp
         # Return None when triangulation fails.
         return None, None
-
-    def callback(self, image_slice: np.ndarray) -> sv.Detections:
-        results = self.d_net(image_slice)[0]
-        detections = sv.Detections.from_ultralytics(results)
-
-        iou = 0.7
-        detections = detections.with_nms(iou, class_agnostic=True)
-        return detections
-
-    def pre_process(self, img):
-        try:
-            self.slicer = sv.InferenceSlicer(callback=self.callback, slice_wh=(480, 640), overlap_ratio_wh=(0.5, 0.5))
-            slices = self.slicer(img)
-
-            return slices
-        except RuntimeError as e:
-            if str(e) == 'cannot schedule new futures after interpreter shutdown':
-                print("Interpreter is shutting down, cannot schedule new futures.")
-            else:
-                raise e

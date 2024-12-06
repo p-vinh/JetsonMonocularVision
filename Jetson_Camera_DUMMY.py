@@ -14,9 +14,8 @@ class Jetson_Camera:
         self.flip = flip
 
         # Use Image as a test image
-        self.video_input = cv2.imread(
-            "test_images/row-6-column-1.jpg"
-        )  # Image Size of the original image 4000x3000
+        self.video_input = "test_images/row-6-column-1.jpg"
+          # Image Size of the original image 4000x3000
 
         if self.video_input is None:
             print(f"Error: Could not open video input {self.video_input_id}")
@@ -33,8 +32,8 @@ class Jetson_Camera:
             while self.alive:
                 img_local = self.video_input
 
-                if self.flip:
-                    img_local = cv2.rotate(img_local, cv2.ROTATE_180)
+                # if self.flip:
+                #     img_local = cv2.rotate(img_local, cv2.ROTATE_180)
 
                 self.allow_read = False
                 self.img = img_local
@@ -59,7 +58,7 @@ class Jetson_Camera:
 if __name__ == "__main__":
     camera = Jetson_Camera(
         input_num=0, recording_dir=".", recording_name="test", flip=False
-    )  # not going to be used for testing
+    )
     try:
         while camera.is_thread_alive():
             pass
