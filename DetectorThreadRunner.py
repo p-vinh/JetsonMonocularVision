@@ -4,7 +4,7 @@
    operations done on those variables are thread safe. DO NOT BYPASS Detector.py AND READ FOM THIS CLASSES INSTANCE
    ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 """
-
+#!/usr/bin/python3.8
 import math
 import time
 import Fuse
