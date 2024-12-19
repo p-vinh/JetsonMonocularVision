@@ -13,9 +13,7 @@ class Main:
     def __init__(self, conf_dict):
         self.GPS = MavLink(conf_dict['MAVLINK']['directory'], int(conf_dict['MAVLINK']['baud']))
         self.Detection_and_Location = Detector(left_input=conf_dict['DETECTION']['left'],
-                                               right_input=conf_dict['DETECTION']['right'],
                                                left_save_name=conf_dict['DETECTION']['left_savename'],
-                                               right_save_name=conf_dict['DETECTION']['right_savename'],
                                                dir_name=conf_dict['DETECTION']['directory'],
                                                camera_pitch=float(conf_dict['DETECTION']['camera_pitch']),
                                                GPS_node=self.GPS,

@@ -22,13 +22,12 @@ from Fuse import Fuse
 
 
 class Detector:
-    def __init__(self, left_input, right_input, left_save_name, right_save_name, dir_name, GPS_node: MavLink,
+    def __init__(self, left_input, left_save_name, dir_name, GPS_node: MavLink,
                  camera_pitch, spread=0.8636, fov=62.2, threshold_fuse=None, flip=False):
         self.detection_timestamp = 0
         self.persons_cords = None
         self.logfile = open("Detector_last_log.log", "w")
         self.t_runner = DetectorThreadRunner(Jetson_Camera(str(left_input), dir_name, left_save_name, flip),
-                                             Jetson_Camera(str(right_input), dir_name, right_save_name, flip),
                                              pitch=camera_pitch, spread=spread, fov=fov, t_fuse=threshold_fuse, GPS_node=GPS_node,
                                              log_file=self.logfile)
         if flip:

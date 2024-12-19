@@ -13,11 +13,10 @@ from Triangulation import stereo_vision
 from sahi.predict import predict
 import os
 
-# Left camera will be used as a main camera. Right camera will be used as a reference camera.
+# Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
-    def __init__(self, l_camera, r_camera, pitch, spread, fov, t_fuse, GPS_node, log_file):
+    def __init__(self, l_camera, pitch, spread, fov, t_fuse, GPS_node, log_file):
         self.l_camera = l_camera
-        self.r_camera = r_camera
         self.pitch = pitch
         self.spread = spread
         self.fov = fov
@@ -28,11 +27,7 @@ class DetectorThreadRunner:
         self.log_f = log_file
         self.detect_fuse = Fuse.Fuse(t_fuse)
 
-    def swap_cameras(self):
-        self.l_camera, self.r_camera = self.r_camera, self.l_camera
-
     def thread_loop(self):
-        r_image = None
         l_image = None
         image_location = None
         l_detections = []
@@ -46,10 +41,6 @@ class DetectorThreadRunner:
         while not self.l_camera.allow_read:
             pass
         l_image = self.l_camera.img 
-
-        while not self.r_camera.allow_read:
-            pass
-        r_image = self.r_camera.img
         
         # Get detections from the YOLOv8 model through SAHI Helper
         l_detections = predict(
@@ -113,13 +104,13 @@ class DetectorThreadRunner:
         #         self.get_persons_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov,
         #                              image_location, print_mode="l")
 
+        self.get_weed_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov, image_location, print_mode="h")
         if person_location_internal is not None:
             self.person_loc = person_location_internal
             self.detection_time = time_stamp_internal
 
     def kill(self):
         self.l_camera.kill()
-        self.r_camera.kill()
 
     #TODO: Determine what is returned by the YOLOv8 model 
     def get_best_detection(self, detections):

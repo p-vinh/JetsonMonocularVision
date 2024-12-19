@@ -80,3 +80,18 @@ def stereo_vision(spread, center_right, center_left, fov, image_width, image_hei
     return distance_average, angle_center_target, vertical_angle
 
 
+"""
+A lower value for GSD means a more accurate survey. Your survey cannot be more accurate than your GSD.
+The range for UAV photogrammetry typically falls between 1.5 to 2.5 cm/px (.6 to 1 inch).
+Some recommend a ground sample distance of 1 cm/px for professional surveys, which is very low.
+"""
+def monocular_vision(focal_length, object_height, image_height):
+    # Calculate the distance to the object using the formula:
+    # We want the x,y coordinates of the object in the image and the focal length of the camera with respect to the drone's GPS location.
+    # distance = (focal_length * object_height) / image_height
+
+    distance = (focal_length * object_height) / image_height
+    
+        
+    
+    return distance
