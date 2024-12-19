@@ -7,7 +7,7 @@ import time
 # import geopy
 # import geopy.distance
 
-
+#TODO Get the altitude from MavLink
 class MavLink:
     def __init__(self, connection_str, baud, timeout=3):
         self.GLOBAL_POSITION_TIMEOUT = timeout

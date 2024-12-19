@@ -18,8 +18,8 @@ class Main:
                                                camera_pitch=float(conf_dict['DETECTION']['camera_pitch']),
                                                GPS_node=self.GPS,
                                                spread=float(conf_dict['DETECTION']['camera_sep']),
+                                               sensor_width=float(conf_dict['DETECTION']['sensor_width']),
                                                fov=float(conf_dict['DETECTION']['camera_fov']),
-                                               threshold_fuse=conf_dict['DETECTION_FUSE'],
                                                flip=bool(conf_dict['DETECTION']['flip']))
         self.Network = Network((conf_dict['NETWORKING']['GROUND_STATION_IP'],
                                 conf_dict['NETWORKING']['GROUND_STATION_PORT']),

@@ -9,32 +9,29 @@ import math
 import time
 import Fuse
 from ultralytics import YOLO
-from Triangulation import stereo_vision
+from Triangulation import stereo_vision, monocular_vision, calculate_gsd
 from sahi.predict import predict
 import os
 
 # Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
-    def __init__(self, l_camera, pitch, spread, fov, t_fuse, GPS_node, log_file):
+    def __init__(self, l_camera, pitch, spread, sensor_width, fov, GPS_node, log_file):
         self.l_camera = l_camera
         self.pitch = pitch
         self.spread = spread
         self.fov = fov
+        self.sensor_width = sensor_width
         self.GPS = GPS_node
         self.d_net = YOLO('model/weed_model.pt') # Trained YOLOv8 model
-        self.person_loc = None
+        self.weed_loc = None
         self.detection_time = None
         self.log_f = log_file
-        self.detect_fuse = Fuse.Fuse(t_fuse)
 
     def thread_loop(self):
         l_image = None
         image_location = None
         l_detections = []
-        r_detections = None
         best_detection_l = None
-        best_detection_r = None
-        person_location_internal = None
         time_stamp_internal = None
 
         # Get images from both cameras. A list of images is returned from the camera thread. The first image in the top right corner of the original image.
@@ -71,8 +68,6 @@ class DetectorThreadRunner:
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
         best_detection_l, all_detections_l = self.get_best_detection(l_detections)
-        # Do the same for right image
-        # best_detection_r, all_detections_r = self.get_best_detection(r_detections)
 
         """
             For triangulation to work with multiple targets, triangulation code has to know which detection in left 
@@ -104,11 +99,18 @@ class DetectorThreadRunner:
         #         self.get_persons_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov,
         #                              image_location, print_mode="l")
 
-        self.get_weed_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov, image_location, print_mode="h")
-        if person_location_internal is not None:
-            self.person_loc = person_location_internal
+        self.weed_loc, self.detection_time = self.get_weed_loc(l_image, best_detection_l, self.sensor_width, self.fov, image_location, print_mode="h")
+        
+        if self.weed_loc is not None:
+            self.weed_loc = self.weed_loc
             self.detection_time = time_stamp_internal
+            
+        if self.log_f is not None:
+            self.log_f.write("Detection time: " + str(self.detection_time) + "\n")
+            self.log_f.write("Person location: " + str(self.weed_loc) + "\n\n")
+        
 
+        
     def kill(self):
         self.l_camera.kill()
 
@@ -128,34 +130,39 @@ class DetectorThreadRunner:
             return None, None
         return best_detection, weed_detected_list
 
-    def get_weed_loc(self, image, best_l, best_r, spread, fov, location, print_mode=None):
+    def get_weed_loc(self, image, best_l, sensor_width, fov, location, print_mode=None):
         time_stamp = None
         prefix = "Low confidence"
         weed_cords_local = None
         # Triangulation function will perform calculations to get direct distance, horizontal angle, and a vertical
-        # angle to the target. Returns None if calculation fails.
-        distance, angle, vertical = stereo_vision(spread=spread,
-                                                  center_right=best_r[:2],  # Assuming center coordinates are at index 0 and 1
-                                                  center_left=best_l[:2],  # Assuming center coordinates are at index 0 and 1
-                                                  fov=fov,
-                                                  image_width=image.shape[1],
-                                                  image_height=image.shape[0])
-        if not math.isnan(distance):
+        # angle to the target. Returns None if calculation fails. !REQUIRES RIGHT IMAGE FOR STEREO VISION!
+        # distance, angle, vertical = stereo_vision(spread=spread,
+        #                                           center_right=best_r[:2],  # Assuming center coordinates are at index 0 and 1
+        #                                           center_left=best_l[:2],  # Assuming center coordinates are at index 0 and 1
+        #                                           fov=fov,
+        #                                           image_width=image.shape[1],
+        #                                           image_height=image.shape[0])
+        
+        # Calculate the distance, and coordinates using Monocular vision.
+        #Note Altitude is set to 10meters. Change Mavlink to get the actual altitude.
+        ALTITUDE = 10
+        gsd = calculate_gsd(fov, sensor_width, image.shape[1], ALTITUDE)
+        lat, lon = monocular_vision(location[0], location[1], ALTITUDE, gsd, image.shape[1], image.shape[0], best_l[0], best_l[1])
+        
+        if lat is not None and lon is not None:
             # If triangulation calculation did not fail, then use "get_weed_GPS()" method to combine, GPS, heading,
             # horizontal and vertical angles, camera pitch angle, and distance to predict targets GPS location.
             # weed_cords_local = self.GPS.get_weed_GPS(distance, angle, location,
             #                                                vertical, self.pitch)
-            weed_cords_local = (0, 0)
-            # Save the timestamp of when this triangulation happened.
+            weed_cords_local = {'lat': lat, 'lon': lon}
             time_stamp = time.time()
             # Print to log file.
             if print_mode is not None:
                 if print_mode == "h":
                     prefix = ">>> High confidence"
-                self.log_f.write(prefix + " distance:" + str(distance) + "\n")
-                self.log_f.write(prefix + " horizontal angle:" + str(angle) + "\n")
-                self.log_f.write(prefix + " vertical angle:" + str(vertical) + "\n")
-                self.log_f.write(prefix + " coordinates:" + str(weed_cords_local) + "\n\n")
+                self.log_f.write(prefix + "Monocular Vision: Latitude: " + str(lat) + " Longitude: " + str(lon) + "\n\n")
+                self.log_f.write(prefix + "Time: " + str(time_stamp) + "\n")
+                self.log_f.write("------------------------------------------------------\n")
             # Return weed GPS and time when this triangulation happened.
             return weed_cords_local, time_stamp
         # Return None when triangulation fails.

@@ -117,3 +117,30 @@ def monocular_vision(drone_lat, drone_lon, drone_alt, gsd, image_width, image_he
     target_lon = drone_lon + d_lon
 
     return target_lat, target_lon
+
+def calculate_gsd(focal_length, sensor_width, image_width, altitude):
+    """
+    Calculate the Ground Sampling Distance (GSD) in meters per pixel.
+
+    Parameters:
+    - focal_length: Focal length of the camera (in millimeters).
+    - sensor_width: Width of the camera sensor (in millimeters).
+    - image_width: Width of the image (in pixels).
+    - altitude: Altitude of the drone (in meters).
+
+    Returns:
+    - gsd: Ground Sampling Distance (in meters per pixel).
+    
+    Ex: Raspberry Pi v2 Camera Module:
+    Focal length: 3.04 mm
+    Sensor width: 3.68 mm
+    Image width: 3280 pixels
+    Altitude: 10 meters
+    """
+    # Convert focal length and sensor width to meters
+    focal_length_m = focal_length / 1000.0
+    sensor_width_m = sensor_width / 1000.0
+
+    # Calculate GSD
+    gsd = (altitude * sensor_width_m) / (focal_length_m * image_width)
+    return gsd
