@@ -85,13 +85,35 @@ A lower value for GSD means a more accurate survey. Your survey cannot be more a
 The range for UAV photogrammetry typically falls between 1.5 to 2.5 cm/px (.6 to 1 inch).
 Some recommend a ground sample distance of 1 cm/px for professional surveys, which is very low.
 """
-def monocular_vision(focal_length, object_height, image_height):
-    # Calculate the distance to the object using the formula:
-    # We want the x,y coordinates of the object in the image and the focal length of the camera with respect to the drone's GPS location.
-    # distance = (focal_length * object_height) / image_height
+def monocular_vision(drone_lat, drone_lon, drone_alt, gsd, image_width, image_height, pixel_x, pixel_y):
+    """
+    Calculate the GPS location of a point in an image.
 
-    distance = (focal_length * object_height) / image_height
-    
-        
-    
-    return distance
+    Parameters:
+    - drone_lat: Latitude of the drone (in decimal degrees).
+    - drone_lon: Longitude of the drone (in decimal degrees).
+    - drone_alt: Altitude of the drone (in meters).
+    - gsd: Ground Sampling Distance (in meters per pixel).
+    - image_width: Width of the image (in pixels).
+    - image_height: Height of the image (in pixels).
+    - pixel_x: X-coordinate of the target pixel in the image.
+    - pixel_y: Y-coordinate of the target pixel in the image.
+
+    Returns:
+    - (target_lat, target_lon): Latitude and longitude of the target point.
+    """
+    EARTH_RADIUS = 6378137.0
+
+    # Calculate the ground distance from the image center to the target pixel
+    dx = (pixel_x - image_width / 2) * gsd
+    dy = (pixel_y - image_height / 2) * gsd
+
+    # Convert ground distance to latitude and longitude offsets
+    d_lat = dy / EARTH_RADIUS * (180 / math.pi)
+    d_lon = dx / (EARTH_RADIUS * math.cos(math.radians(drone_lat))) * (180 / math.pi)
+
+    # Calculate the target GPS coordinates
+    target_lat = drone_lat + d_lat
+    target_lon = drone_lon + d_lon
+
+    return target_lat, target_lon
