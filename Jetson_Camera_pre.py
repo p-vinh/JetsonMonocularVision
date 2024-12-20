@@ -50,9 +50,6 @@ class Jetson_Camera:
                     print("Error: No image captured.")
                     continue
 
-                if self.flip:
-                    img_local = cv2.rotate(img_local, cv2.ROTATE_180)
-
                 self.allow_read = False
                 self.img = img_local
                 self.output.write(img_local)

@@ -14,9 +14,6 @@ class Jetson_Camera:
 
         self.video_input_id = input_num
         self.videoInput_setup = ["--input-width=1920", "--input-height=1080", "--input-rate=21.0"]
-        if flip:
-            self.videoInput_setup.append("--input-flip=rotate-180")
-            print("CAMERA:    Added 180 deg rotation")
         self.video_input = jetson_utils.videoSource(str(self.video_input_id), self.videoInput_setup)
         print(recording_name + "Camera input is:" + str(input_num))
 

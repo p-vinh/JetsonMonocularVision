@@ -19,8 +19,7 @@ class Main:
                                                GPS_node=self.GPS,
                                                spread=float(conf_dict['DETECTION']['camera_sep']),
                                                sensor_width=float(conf_dict['DETECTION']['sensor_width']),
-                                               fov=float(conf_dict['DETECTION']['camera_fov']),
-                                               flip=bool(conf_dict['DETECTION']['flip']))
+                                               fov=float(conf_dict['DETECTION']['camera_fov']))
         self.Network = Network((conf_dict['NETWORKING']['GROUND_STATION_IP'],
                                 conf_dict['NETWORKING']['GROUND_STATION_PORT']),
                                (conf_dict['NETWORKING']['HUSKY_IP'],

@@ -55,7 +55,6 @@ class DetectorThreadRunner:
             visual_bbox_thickness=1,
             visual_text_size=0.5,
             visual_text_thickness=1,
-            export_pickle=False
         )
         
         # Get GPS location from Mavlink module. Scene GPS is read at about the same time its safe to assume that the
@@ -64,40 +63,13 @@ class DetectorThreadRunner:
             pass
         image_location = self.GPS.loc
         
-
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
         best_detection_l, all_detections_l = self.get_best_detection(l_detections)
+        
+        if best_detection_l is None:
+            raise Exception("Cannot find any weed detection in the image")
 
-        """
-            For triangulation to work with multiple targets, triangulation code has to know which detection in left 
-            image correlates to which detection in the right image. In this case an assumption is made: the detection
-            with the highest confidence in the left image corresponds to the right image's highest confidence detection.
-            So, best detection in the left image is the same target as the right image best detection. Then 
-            triangulation will be performed on those two detections. 
-        """
-
-        # chaneg this to use the pre-processed images and not the fuse (threshold) class
-        # if best_detection_l is None or best_detection_r is None:
-        #     # If only one of the cameras got a detection or neither, the that means it might be a false positive or,
-        #     # target is too far away. In ether case triangulation should be delayed. So, the fuse is punished (fined).
-        #     self.detect_fuse.punish()
-        # else:
-        #     # If both images got a detection, the reward the fuse, indicating that detections is likely is not a false
-        #     # positive and target is close.
-        #     self.detect_fuse.reward()
-        #     if self.detect_fuse:
-        #         # If fuse fused, that there were multiple high confidence detection in a short period of time. So,
-        #         # a triangulation is performed and the results of this triangulation will be sent to other threads.
-        #         self.person_loc, self.detection_time = self.get_persons_loc(l_image, best_detection_l,
-        #                                                                     best_detection_r, image_location,
-        #                                                                     self.spread, self.fov,
-        #                                                                     print_mode="h")
-        #     else:
-        #         # low confidence triangulation, just prints to a file. Results of this triangulation will not be sent to
-        #         # other threads.
-        #         self.get_persons_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov,
-        #                              image_location, print_mode="l")
 
         self.weed_loc, self.detection_time = self.get_weed_loc(l_image, best_detection_l, self.sensor_width, self.fov, image_location, print_mode="h")
         
@@ -118,7 +90,7 @@ class DetectorThreadRunner:
     def get_best_detection(self, detections):
         best_detection = None
         weed_detected_list = []
-
+        print(detections)
         if detections is not None and len(detections) > 0:
             for i in range(len(detections.class_id)):
                 # Check to see if the detection is a 'weed'
