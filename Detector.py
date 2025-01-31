@@ -25,7 +25,7 @@ class Detector:
     def __init__(self, left_input, left_save_name, dir_name, GPS_node: MavLink,
                  camera_pitch, spread=0.8636, sensor_width=3.04, fov=3.04):
         self.detection_timestamp = 0
-        self.persons_cords = None
+        self.weed_cords = None
         self.logfile = open("Detector_last_log.log", "w")
         self.t_runner = DetectorThreadRunner(Jetson_Camera(str(left_input), dir_name, left_save_name),
                                              pitch=camera_pitch, spread=spread, sensor_width=sensor_width, fov=fov, GPS_node=GPS_node,
@@ -43,7 +43,7 @@ class Detector:
         while self.isRunning:
             self.t_runner.thread_loop()
             self.t_lock.acquire()
-            self.persons_cords = self.t_runner.person_loc
+            self.weed_cords = self.t_runner.weed_loc
             self.detection_timestamp = self.t_runner.detection_time
             self.t_lock.release()
 
@@ -53,7 +53,7 @@ class Detector:
     def get_person_loc(self):
         temp = None
         self.t_lock.acquire()
-        temp = self.persons_cords
+        temp = self.weed_cords
         self.t_lock.release()
         return temp
 
@@ -68,7 +68,7 @@ class Detector:
         temp1 = None
         temp2 = None
         self.t_lock.acquire()
-        temp1 = self.persons_cords
+        temp1 = self.weed_cords
         temp2 = self.detection_timestamp
         self.t_lock.release()
         return temp1, temp2

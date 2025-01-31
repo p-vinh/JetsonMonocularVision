@@ -8,16 +8,16 @@
 #!/usr/bin/python3.8
 import math
 import time
-import Fuse
 from ultralytics import YOLO
 from Triangulation import stereo_vision, monocular_vision, calculate_gsd
-from sahi.slicing import slice_image
 import os
+from sahi.predict import get_sliced_prediction, get_prediction
+from sahi import AutoDetectionModel
+import supervision as sv
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-
-SLICE_SIZE = 800
-SLICE_OVERLAP = 0.2
+import cv2
+from roboflow import Roboflow
+import tempfile
 
 # Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
@@ -28,7 +28,7 @@ class DetectorThreadRunner:
         self.fov = fov
         self.sensor_width = sensor_width
         self.GPS = GPS_node
-        self.d_net = YOLO("model/weed_model.pt")  # Trained YOLOv8 model
+        # self.d_net = YOLO("model/best.pt")  # Trained YOLOv8 model
         self.weed_loc = None
         self.detection_time = None
         self.log_f = log_file
@@ -45,69 +45,35 @@ class DetectorThreadRunner:
             pass
         l_image = self.l_camera.img
 
-        model = YOLO("model/weed_model.pt")
-        # Get detections from the YOLOv8 model through SAHI Helper
-        # l_detections = predict(
-        #     model_type='yolov8',
-        #     model_path='model/weed_model.pt',
-        #     model_config_path='args_for_sahi.yaml',
-        #     model_device='cuda:0',
-        #     model_confidence_threshold=0.6,
-        #     postprocess_class_agnostic=True,
-        #     source=l_image,
-        #     slice_height=480,
-        #     slice_width=640,
-        #     overlap_height_ratio=0.2,
-        #     overlap_width_ratio=0.2,
-        #     visual_bbox_thickness=1,
-        #     visual_text_size=0.5,
-        #     visual_text_thickness=1,
-        # )
-
-        # l_detections = sv.Detections.from_ultralytics(model(l_image)[0])
-        
-        background_img = Image.open(l_image)
-
-        slice_image_result = slice_image(
-            image=l_image,
-            slice_height=SLICE_SIZE,
-            slice_width=SLICE_SIZE,
-            overlap_height_ratio=SLICE_OVERLAP,
-            overlap_width_ratio=SLICE_OVERLAP,
-        )
-
-        print(f"Number of slices: {len(slice_image_result)}")
-
-        # Extract bounding box coordinates+identified cls and store in detections
-        for index, sliced_image in enumerate(slice_image_result.sliced_image_list):
-            img = sliced_image.image
-            PIL_img = Image.fromarray(img)
-
-            results = model.predict(
-                source=PIL_img,
-                line_width=2,
-                verbose=False,
-                max_det=5000,
-                device="cpu",
-                conf=0.5,
-                iou=0.7,
+        try:
+            detection_model = AutoDetectionModel.from_pretrained(
+                model_type="yolov8",
+                model_path="model/best.pt",
+                confidence_threshold=0.4,
+                device="cuda:0",
             )
-
-            boxes = results[0].boxes
-            x, y = sliced_image.starting_pixel
-            for box in boxes:
-                cls_index = int(box.cls[0])
-                x1 = box.xyxy[0][0] + x
-                y1 = box.xyxy[0][1] + y
-                x2 = box.xyxy[0][2] + x
-                y2 = box.xyxy[0][3] + y
-                l_detections.append(
-                    {"cls_index": cls_index, "x1": x1, "y1": y1, "x2": x2, "y2": y2}
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+                cv2.imwrite(f.name, l_image)
+                l_detections = get_sliced_prediction(
+                    image=f.name,
+                    detection_model=detection_model,
+                    postprocess_class_agnostic=True,
+                    overlap_height_ratio=0.2,
+                    overlap_width_ratio=0.2,
+                    auto_slice_resolution=True,
                 )
-        inference_time = time.time()
-        print(f"Number of ddetections: {len(l_detections)}")
-
-
+                
+                # result = get_prediction(
+                #     image=f.name,
+                #     detection_model=detection_model,
+                #     verbose=1
+                # )
+                
+                f.close()
+                os.unlink(f.name)
+        except Exception as e:
+            print(e)
+            return
         # Get GPS location from Mavlink module. Scene GPS is read at about the same time its safe to assume that the
         # location stores is tah location at which those pictures were taken.
         while not self.GPS.allow_read:
@@ -116,11 +82,11 @@ class DetectorThreadRunner:
 
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
-        best_detection_l, all_detections_l = self.get_best_detection(l_detections)
+        best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
 
         if best_detection_l is None:
             raise Exception("Cannot find any weed detection in the image")
-
+        print("Best detection: ", best_detection_l)
         self.weed_loc, self.detection_time = self.get_weed_loc(
             l_image,
             best_detection_l,
@@ -145,18 +111,18 @@ class DetectorThreadRunner:
     def get_best_detection(self, detections):
         best_detection = None
         weed_detected_list = []
-        print(detections)
+
         if detections is not None and len(detections) > 0:
-            for i in range(len(detections.class_id)):
+            for i in range(len(detections)):
                 # Check to see if the detection is a 'weed'
                 if (
-                    detections.class_id[i] == 1
-                    and detections.data["class_name"][i] == "weed"
+                    detections[i].category.id == 1
+                    and detections[i].category.name == "weed"
                 ):
                     weed_detected_list.append(detections[i])
                     if (
                         best_detection is None
-                        or detections.confidence[i] > best_detection.confidence
+                        or detections[i].score.value > best_detection.score.value
                     ):
                         best_detection = detections[i]
         else:
@@ -179,18 +145,24 @@ class DetectorThreadRunner:
         # Calculate the distance, and coordinates using Monocular vision.
         # Note Altitude is set to 10meters. Change Mavlink to get the actual altitude.
         ALTITUDE = 10
-        # Test: 5472x3648
         gsd = calculate_gsd(fov, sensor_width, image.shape[1], ALTITUDE)
+        
+        # Calculate the center of the bounding box.
+        x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
+        y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
+        
         lat, lon = monocular_vision(
-            location[0],
-            location[1],
+            location["lat"],
+            location["lon"],
             ALTITUDE,
             gsd,
             image.shape[1],
             image.shape[0],
-            best_l[0],
-            best_l[1],
+            x_center,
+            y_center,
         )
+        
+        print("Lat: ", lat, " Lon: ", lon)
 
         if lat is not None and lon is not None:
             # If triangulation calculation did not fail, then use "get_weed_GPS()" method to combine, GPS, heading,
@@ -219,3 +191,8 @@ class DetectorThreadRunner:
             return weed_cords_local, time_stamp
         # Return None when triangulation fails.
         return None, None
+    
+    def kill(self):
+        self.thread.join()
+        self.l_camera.kill()
+        return

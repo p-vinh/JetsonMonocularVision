@@ -14,7 +14,7 @@ class Jetson_Camera:
         self.flip = flip
 
         # Use Image as a test image
-        self.video_input = "test_images/DJI_0157.JPG"
+        self.video_input = cv2.imread("test_images/1920x1080.jpg")
           # Image Size of the original image 4000x3000
 
         if self.video_input is None:
