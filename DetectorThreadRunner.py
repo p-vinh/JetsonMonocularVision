@@ -11,12 +11,11 @@ import time
 from ultralytics import YOLO
 from Triangulation import stereo_vision, monocular_vision, calculate_gsd
 import os
-from sahi.predict import get_sliced_prediction, get_prediction
+from sahi.predict import get_sliced_prediction
 from sahi import AutoDetectionModel
 import supervision as sv
 import numpy as np
 import cv2
-from roboflow import Roboflow
 import tempfile
 
 # Left camera will be used as a main camera. For Monocular vision
@@ -63,11 +62,6 @@ class DetectorThreadRunner:
                     auto_slice_resolution=True,
                 )
                 
-                # result = get_prediction(
-                #     image=f.name,
-                #     detection_model=detection_model,
-                #     verbose=1
-                # )
                 
                 f.close()
                 os.unlink(f.name)
