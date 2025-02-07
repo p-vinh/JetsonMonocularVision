@@ -6,7 +6,7 @@ from Detector import Detector
 import sys
 import socket
 import errno
-# import fcntl, os
+import fcntl, os
 import pickle
 
 

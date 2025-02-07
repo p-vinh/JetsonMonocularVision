@@ -19,8 +19,8 @@ class MavLink:
 
         self.is_running = True
 
-        self.connection = mavutil.mavlink_connection(device=connection_str, baud=baud)
-        self.connection.wait_heartbeat()
+        # self.connection = mavutil.mavlink_connection(device=connection_str, baud=baud)
+        # self.connection.wait_heartbeat()
 
         self.thread = Thread(target=self.loop, args=())
         self.thread.deamon = True
@@ -31,6 +31,7 @@ class MavLink:
         self.allow_read = True
         self.is_running = False'''
     def loop(self):
+        return
         last_global_position_recv = time.time()
 
         while self.is_running:
@@ -106,8 +107,6 @@ class MavLink:
         print("MAVLINK GPS:   WEED GPS:", weed_GPS.latitude, weed_GPS.longitude)
         return {'lat': weed_GPS.latitude, 'lon': weed_GPS.longitude}
         
-        return None
-
     def is_thread_alive(self):
         return self.thread.is_alive()
     def kill(self):
