@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
 from datetime import datetime
 from threading import Thread
@@ -14,7 +14,7 @@ class Jetson_Camera:
 
         self.video_input_id = input_num
         self.videoInput_setup = ["--input-width=1920", "--input-height=1080", "--input-rate=21.0"]
-        self.video_input = jetson_utils.videoSource(str(self.video_input_id), self.videoInput_setup)
+        self.video_input = jetson_utils.videoSource("/dev/video" + str(self.video_input_id), self.videoInput_setup)
         print(recording_name + "Camera input is:" + str(input_num))
 
         if recording_name is None:

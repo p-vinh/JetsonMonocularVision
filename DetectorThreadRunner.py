@@ -13,7 +13,6 @@ from Triangulation import stereo_vision, monocular_vision, calculate_gsd
 import os
 from sahi.predict import get_sliced_prediction
 from sahi import AutoDetectionModel
-import supervision as sv
 import numpy as np
 import cv2
 import tempfile
@@ -28,6 +27,13 @@ class DetectorThreadRunner:
         self.sensor_width = sensor_width
         self.GPS = GPS_node
         # self.d_net = YOLO("model/best.pt")  # Trained YOLOv8 model
+        print("CREATING DETECTION MODEL FROM PRE TRAINED")
+        self.detection_model = AutoDetectionModel.from_pretrained(
+	        model_type="ultralytics",
+	        model_path="model/best.pt",
+	        confidence_threshold=0.4,
+	        device="cuda:0",
+	    	)
         self.weed_loc = None
         self.detection_time = None
         self.log_f = log_file
@@ -45,26 +51,17 @@ class DetectorThreadRunner:
         l_image = self.l_camera.img
 
         try:
-            detection_model = AutoDetectionModel.from_pretrained(
-                model_type="yolov8",
-                model_path="model/best.pt",
-                confidence_threshold=0.4,
-                device="cuda:0",
-            )
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-                cv2.imwrite(f.name, l_image)
+                print("Detecting Objects")
                 l_detections = get_sliced_prediction(
-                    image=f.name,
-                    detection_model=detection_model,
+                    image=l_image,
+                    detection_model=self.detection_model,
                     postprocess_class_agnostic=True,
                     overlap_height_ratio=0.2,
                     overlap_width_ratio=0.2,
                     auto_slice_resolution=True,
                 )
+                print(l_detections)
                 
-                
-                f.close()
-                os.unlink(f.name)
         except Exception as e:
             print(e)
             return

@@ -14,7 +14,8 @@ import time
 import sys
 from threading import Thread, Lock
 #from Jetson_Camera_DUMMY import Jetson_Camera
-from Jetson_Camera_pre import Jetson_Camera
+#from Jetson_Camera_pre import Jetson_Camera
+from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
 from Load_Config import Config
@@ -88,6 +89,6 @@ def kill(core):
 if __name__ == '__main__':
     config_dict = Config(sys.argv[1])
     GPS = MavLink(config_dict.main_dict['MAVLINK']['directory'], config_dict.main_dict['MAVLINK']['baud'])
-    fuse = Fuse(config_dict=config_dict.main_dict['DETECTION_FUSE'])
+    #fuse = Fuse(config_dict=config_dict.main_dict['DETECTION_FUSE'])
     detector = Detector("0", "1", "test_left", "test_left", "./Recordings", fuse, GPS, 0, flip=True)
     atexit.register(kill, detector)

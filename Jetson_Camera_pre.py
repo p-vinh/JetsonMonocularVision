@@ -16,25 +16,12 @@ class Jetson_Camera:
         self.flip = flip
 
         # OpenCV video capture
-        self.video_input = cv2.VideoCapture(self.video_input_id)
+        self.video_input = cv2.VideoCapture(0)
         if not self.video_input.isOpened():
             print(f"Error: Could not open video input {self.video_input_id}")
             return
 
         print(recording_name + " Camera input is: " + str(input_num))
-
-        if recording_name is None:
-            now = datetime.now()
-            recording_name = now.strftime("%Y-%m-%d_%H_%M_%S")
-        self.output_path = os.path.join(recording_dir, recording_name + '.avi')
-
-        # OpenCV video writer
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        
-        # if output path does not exist, create it
-        if not os.path.exists(recording_dir):
-            os.makedirs(recording_dir)
-        self.output = cv2.VideoWriter(self.output_path, fourcc, 21.0, (800, 800))
 
         self.alive = True
         self.thread = Thread(target=self.loop, args=())
@@ -52,7 +39,6 @@ class Jetson_Camera:
 
                 self.allow_read = False
                 self.img = img_local
-                self.output.write(img_local)
         except Exception as e:
             print("Error: ", e)
     

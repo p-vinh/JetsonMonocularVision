@@ -1,4 +1,4 @@
-#!/usr/bin/python3.8
+#!/usr/bin/python
 import atexit
 import math
 
@@ -35,10 +35,10 @@ class MavLink:
         last_global_position_recv = time.time()
 
         while self.is_running:
-            message = self.connection.recv_match()
+#            message = self.connection.recv_match()
             
             # Fake message
-            # message = None
+            message = None
             
             if 90 >= self.loc['lat'] >= -90:
                 old_loc = geopy.Point(self.loc['lat'], self.loc['lon'])

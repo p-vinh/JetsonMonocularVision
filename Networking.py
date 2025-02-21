@@ -33,11 +33,8 @@ class Network:
         except Exception as e:
             print("Could not connect to HUSKY")
         
-        try:
             # self.GS = self.connect((self.GS_dict[0], int(self.GS_dict[1])))
             time.sleep(0.3)
-        except Exception as e:
-            print("Could not connect to GS")
         
 #        self.send_to_GS("DRONE")
         self.send_to_HUSKY("DRONE")
