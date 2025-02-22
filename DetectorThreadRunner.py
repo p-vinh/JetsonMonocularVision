@@ -16,6 +16,8 @@ from sahi import AutoDetectionModel
 import numpy as np
 import cv2
 import tempfile
+from PIL import Image
+import jetson_utils
 
 # Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
@@ -51,9 +53,11 @@ class DetectorThreadRunner:
         l_image = self.l_camera.img
 
         try:
-                print("Detecting Objects")
+                l_image_np = jetson_utils.cudaToNumpy(l_image)
+                l_image_pil = Image.fromarray(l_image_np)
+
                 l_detections = get_sliced_prediction(
-                    image=l_image,
+                    image=l_image_pil,
                     detection_model=self.detection_model,
                     postprocess_class_agnostic=True,
                     overlap_height_ratio=0.2,
