@@ -18,10 +18,13 @@ import cv2
 import tempfile
 from PIL import Image
 import jetson_utils
+from inference_sdk import InferenceHTTPClient
+
 
 # Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
     def __init__(self, l_camera, pitch, spread, sensor_width, fov, GPS_node, log_file):
+        API_KEY = os.getenv("API_KEY")
         self.l_camera = l_camera
         self.pitch = pitch
         self.spread = spread
@@ -36,6 +39,7 @@ class DetectorThreadRunner:
 	        confidence_threshold=0.4,
 	        device="cuda:0",
 	    	)
+        self.client = InferenceHTTPClient(api_url="https://detect.roboflow.com", api_key=API_KEY)
         self.weed_loc = None
         self.detection_time = None
         self.log_f = log_file
@@ -56,15 +60,25 @@ class DetectorThreadRunner:
                 l_image_np = jetson_utils.cudaToNumpy(l_image)
                 l_image_pil = Image.fromarray(l_image_np)
 
-                l_detections = get_sliced_prediction(
-                    image=l_image_pil,
-                    detection_model=self.detection_model,
-                    postprocess_class_agnostic=True,
-                    overlap_height_ratio=0.2,
-                    overlap_width_ratio=0.2,
-                    auto_slice_resolution=True,
-                )
-                print(l_detections)
+                #l_detections = get_sliced_prediction(
+                #    image=l_image_pil,
+                #    detection_model=self.detection_model,
+                #    postprocess_class_agnostic=True,
+                #    overlap_height_ratio=0.2,
+                #    overlap_width_ratio=0.2,
+                #    auto_slice_resolution=True,
+                #)
+                l_detections = self.client.run_workflow(
+		    workspace_name="strawberries-fx9j1",
+		    workflow_id="small-object-detection-sahi",
+		    images={
+			"image": l_image_pil
+		    },
+		    use_cache=True
+		)
+                detections = l_detections[0]["predictions"]["predictions"]
+                #print(detections)
+                
                 
         except Exception as e:
             print(e)
@@ -77,10 +91,17 @@ class DetectorThreadRunner:
 
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
-        best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
+        if (detections is not None):
+             #best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
+             best_detection_l, all_detections_l = self.get_best_detection(detections)
+        else:
+             print("No weed predictions detected.")
+             return
 
         if best_detection_l is None:
-            raise Exception("Cannot find any weed detection in the image")
+            print("Cannot find any weed detection in the image")
+            return
+        
         print("Best detection: ", best_detection_l)
         self.weed_loc, self.detection_time = self.get_weed_loc(
             l_image,
@@ -111,15 +132,30 @@ class DetectorThreadRunner:
             for i in range(len(detections)):
                 # Check to see if the detection is a 'weed'
                 if (
-                    detections[i].category.id == 1
-                    and detections[i].category.name == "weed"
+                    detections[i]["class_id"] == 1
+                    and detections[i]["class"] == "weed"
                 ):
                     weed_detected_list.append(detections[i])
                     if (
                         best_detection is None
-                        or detections[i].score.value > best_detection.score.value
+                        or detections[i]["confidence"] > best_detection["confidence"]
                     ):
                         best_detection = detections[i]
+                        
+         # OLD CODE MIGHT NEED LATER    
+         #if detections is not None and len(detections) > 0:
+         #   for i in range(len(detections)):
+         #       # Check to see if the detection is a 'weed'
+         #       if (
+         #           detections[i].category.id == 1
+         #           and detections[i].category.name == "weed"
+         #       ):
+         #           weed_detected_list.append(detections[i])
+         #           if (
+         #               best_detection is None
+         #               or detections[i].score.value > best_detection.score.value
+         #           ):
+         #               best_detection = detections[i]
         else:
             return None, None
         return best_detection, weed_detected_list
@@ -143,8 +179,11 @@ class DetectorThreadRunner:
         gsd = calculate_gsd(fov, sensor_width, image.shape[1], ALTITUDE)
         
         # Calculate the center of the bounding box.
-        x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
-        y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
+        #x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
+        #y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
+        
+        x_center = best_l["x"]
+        y_center = best_l["y"]
         
         lat, lon = monocular_vision(
             location["lat"],

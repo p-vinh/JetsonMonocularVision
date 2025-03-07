@@ -13,9 +13,9 @@ class MavLink:
     def __init__(self, connection_str, baud, timeout=3):
         self.GLOBAL_POSITION_TIMEOUT = timeout
 
-        self.loc = {'lat': -91, 'lon': -181, 'hdg': -1.0, 'type': 'none'}
+        self.loc = {'lat': 34.045004, 'lon': -117.811608, 'hdg': -1.0, 'type': 'none'}
         self.warning = "None"
-        self.allow_read = True
+        self.allow_read = True 
 
         self.is_running = True
 
