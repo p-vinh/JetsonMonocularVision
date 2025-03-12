@@ -10,3 +10,4 @@ Jetson_Lib_23_11_8.zip
 !Configs/Router_network.conf
 jetsonvenv/*
 .env
+run_project.sh

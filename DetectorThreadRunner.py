@@ -8,11 +8,11 @@
 #!/usr/bin/python3.8
 import math
 import time
-from ultralytics import YOLO
+#from ultralytics import YOLO
 from Triangulation import stereo_vision, monocular_vision, calculate_gsd
 import os
-from sahi.predict import get_sliced_prediction
-from sahi import AutoDetectionModel
+#from sahi.predict import get_sliced_prediction
+#from sahi import AutoDetectionModel
 import numpy as np
 import cv2
 import tempfile
@@ -32,13 +32,13 @@ class DetectorThreadRunner:
         self.sensor_width = sensor_width
         self.GPS = GPS_node
         # self.d_net = YOLO("model/best.pt")  # Trained YOLOv8 model
-        print("CREATING DETECTION MODEL FROM PRE TRAINED")
-        self.detection_model = AutoDetectionModel.from_pretrained(
-	        model_type="ultralytics",
-	        model_path="model/best.pt",
-	        confidence_threshold=0.4,
-	        device="cuda:0",
-	    	)
+ #       print("CREATING DETECTION MODEL FROM PRE TRAINED")
+ #       self.detection_model = AutoDetectionModel.from_pretrained(
+#	        model_type="ultralytics",
+#	        model_path="model/best.pt",
+#	        confidence_threshold=0.4,
+#	        device="cuda:0",
+#	    	)
         self.client = InferenceHTTPClient(api_url="https://detect.roboflow.com", api_key=API_KEY)
         self.weed_loc = None
         self.detection_time = None
@@ -70,7 +70,7 @@ class DetectorThreadRunner:
                 #)
                 l_detections = self.client.run_workflow(
 		    workspace_name="strawberries-fx9j1",
-		    workflow_id="small-object-detection-sahi",
+		    workflow_id="small-human-detection",
 		    images={
 			"image": l_image_pil
 		    },
@@ -131,17 +131,17 @@ class DetectorThreadRunner:
         if detections is not None and len(detections) > 0:
             for i in range(len(detections)):
                 # Check to see if the detection is a 'weed'
-                if (
-                    detections[i]["class_id"] == 1
-                    and detections[i]["class"] == "weed"
-                ):
+                if (detections[i]["class_id"] == 1 and detections[i]["class"] == "weed"):
                     weed_detected_list.append(detections[i])
-                    if (
-                        best_detection is None
-                        or detections[i]["confidence"] > best_detection["confidence"]
-                    ):
+                    if (best_detection is None or detections[i]["confidence"] > best_detection["confidence"]):
                         best_detection = detections[i]
-                        
+
+                # TEST ONLY W/ Human detection Model:
+                if (detections[i]["class_id"] == 0 and detections[i]["class"] == "person"):
+                    weed_detected_list.append(detections[i])
+                    if (best_detection is None or detections[i]["confidence"] > best_detection["confidence"]):
+                       best_detection = detections[i]
+ 
          # OLD CODE MIGHT NEED LATER    
          #if detections is not None and len(detections) > 0:
          #   for i in range(len(detections)):
