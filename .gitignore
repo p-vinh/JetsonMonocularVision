@@ -8,6 +8,7 @@ Jetson_Lib_23_11_8.zip
 *.conf
 !Configs/default.conf
 !Configs/Router_network.conf
+!Configs/ZedConfig.conf
 jetsonvenv/*
 .env
 run_project.sh
