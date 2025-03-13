@@ -84,6 +84,7 @@ def stereo_vision(spread, center_right, center_left, fov, image_width, image_hei
 A lower value for GSD means a more accurate survey. Your survey cannot be more accurate than your GSD.
 The range for UAV photogrammetry typically falls between 1.5 to 2.5 cm/px (.6 to 1 inch).
 Some recommend a ground sample distance of 1 cm/px for professional surveys, which is very low.
+Source: (https://snehilsanyal.github.io/files/paper1.pdf)
 """
 def monocular_vision(drone_lat, drone_lon, drone_alt, drone_hdg, gsd, image_width, image_height, pixel_x, pixel_y):
     """
