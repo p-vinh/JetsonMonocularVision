@@ -193,6 +193,8 @@ class DetectorThreadRunner:
             image.shape[0],
             x_center,
             y_center,
+            fov,
+            sensor_width,
         )
         
         print("Lat: ", lat, " Lon: ", lon)

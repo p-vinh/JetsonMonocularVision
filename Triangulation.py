@@ -86,7 +86,7 @@ The range for UAV photogrammetry typically falls between 1.5 to 2.5 cm/px (.6 to
 Some recommend a ground sample distance of 1 cm/px for professional surveys, which is very low.
 Source: (https://snehilsanyal.github.io/files/paper1.pdf)
 """
-def monocular_vision(drone_lat, drone_lon, drone_alt, drone_hdg, gsd, image_width, image_height, pixel_x, pixel_y):
+def monocular_vision(drone_lat, drone_lon, drone_alt, drone_hdg, gsd, image_width, image_height, pixel_x, pixel_y, focal_length, sensor_width):
     """
     Calculate the GPS location of a point in an image.
 
@@ -100,6 +100,8 @@ def monocular_vision(drone_lat, drone_lon, drone_alt, drone_hdg, gsd, image_widt
     - image_height: Height of the image (in pixels).
     - pixel_x: X-coordinate of the target pixel in the image.
     - pixel_y: Y-coordinate of the target pixel in the image.
+    - focal_length: Focal length of the camera (in millimeters).
+    - sensor_width: Width of the camera sensor (in millimeters).
 
     Returns:
     - (target_lat, target_lon): Latitude and longitude of the target point.
