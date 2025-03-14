@@ -174,9 +174,7 @@ class DetectorThreadRunner:
         #                                           image_height=image.shape[0])
 
         # Calculate the distance, and coordinates using Monocular vision.
-        # Note Altitude is set to 10meters. Change Mavlink to get the actual altitude.
-        ALTITUDE = 10
-        gsd = calculate_gsd(fov, sensor_width, image.shape[1], ALTITUDE)
+        gsd = calculate_gsd(fov, sensor_width, image.shape[1], location["alt"])
         
         # Calculate the center of the bounding box.
         #x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
@@ -188,12 +186,15 @@ class DetectorThreadRunner:
         lat, lon = monocular_vision(
             location["lat"],
             location["lon"],
-            ALTITUDE,
+            location["alt"],
+            location["hdg"],
             gsd,
             image.shape[1],
             image.shape[0],
             x_center,
             y_center,
+            fov,
+            sensor_width,
         )
         
         print("Lat: ", lat, " Lon: ", lon)

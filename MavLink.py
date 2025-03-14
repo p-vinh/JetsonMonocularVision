@@ -37,19 +37,15 @@ class MavLink:
         while self.is_running:
             message = self.connection.recv_match()
             
-            # Fake message
-#            message = None
-            
             if 90 >= self.loc['lat'] >= -90:
                 old_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                #pass
             else:
                 old_loc = None
             if message is not None and message.get_type() == 'GLOBAL_POSITION_INT':
                 self.allow_read = False
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
-                self.loc['hdg'] = message.hdg / 100
+                self.loc['hdg'] = message.hdg / 100 # Heading in degrees
                 self.loc['alt'] = message.relative_alt
                 self.loc['type'] = 'GLOBAL_POSITION_INT'
                 self.warning = "None"
@@ -57,7 +53,6 @@ class MavLink:
                 last_global_position_recv = time.time()
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    #pass
                     print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
             
             if message is not None and time.time() - last_global_position_recv > self.GLOBAL_POSITION_TIMEOUT and message.get_type() == 'GPS_RAW_INT':
@@ -69,7 +64,6 @@ class MavLink:
                 self.warning = "WARNING: No 'GLOBAL_POSITION_INT' detected within timeout window"
                 self.allow_read = True
                 if old_loc is not None:
-                    #pass
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
                     print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
 
