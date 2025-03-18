@@ -1,13 +1,14 @@
 #!/usr/bin/python
 import atexit
 import math
-
+import logging
 from pymavlink import mavutil
 from threading import Thread
 import time
 import geopy
 import geopy.distance
 
+logger = logging.getLogger(__name__)
 #TODO Get the altitude from MavLink
 class MavLink:
     def __init__(self, connection_str, baud, timeout=3):
@@ -54,6 +55,13 @@ class MavLink:
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
                     print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
+                    logger.info("-----------------------------------------------------------------")
+                    logger.info("GLOBAL POSITION INT")
+                    logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
+                    logger.info("MAVLINK GPS:   GPS location: %s, %s", self.loc['lat'], self.loc['lon'])
+                    logger.info("MAVLINK GPS:   Heading: %s", self.loc['hdg'])
+                    logger.info("MAVLINK GPS:   Altitude: %s", self.loc['alt'])
+                    logger.info("-----------------------------------------------------------------")
             
             if message is not None and time.time() - last_global_position_recv > self.GLOBAL_POSITION_TIMEOUT and message.get_type() == 'GPS_RAW_INT':
                 self.allow_read = False
@@ -66,6 +74,11 @@ class MavLink:
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
                     print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
+                    logger.info("-----------------------------------------------------------------")
+                    logger.info("GPS RAW INT")
+                    logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
+                    logger.info("MAVLINK GPS:   GPS location: %s, %s", self.loc['lat'], self.loc['lon'])
+                    logger.info("-----------------------------------------------------------------")
 
             time.sleep(0.1)
 
@@ -101,6 +114,11 @@ class MavLink:
         # pointing forwards and heading is the same ray.
         weed_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
         print("MAVLINK GPS:   WEED GPS:", weed_GPS.latitude, weed_GPS.longitude)
+        logger.info("-----------------------------------------------------------------")
+        logger.info("MAVLINK GPS:   Direction to the weed is: %s", (hdg + offset))
+        logger.info("MAVLINK GPS:   Distance adjusted: %s", distance_adj)
+        logger.info("MAVLINK GPS:   WEED GPS: %s, %s", weed_GPS.latitude, weed_GPS.longitude)
+        logger.info("-----------------------------------------------------------------")
         return {'lat': weed_GPS.latitude, 'lon': weed_GPS.longitude}
         
     def is_thread_alive(self):

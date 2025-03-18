@@ -1,29 +1,34 @@
 """
-   The purpose of this class it to separate variables used inside a detection and geolocation thread and other threads
-   that take data from that thread. Mixing up variables between two threads might cause thread conflicts, unless
-   operations done on those variables are thread safe. DO NOT BYPASS Detector.py AND READ FOM THIS CLASSES INSTANCE
-   ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
+The purpose of this class it to separate variables used inside a detection and geolocation thread and other threads
+that take data from that thread. Mixing up variables between two threads might cause thread conflicts, unless
+operations done on those variables are thread safe. DO NOT BYPASS Detector.py AND READ FOM THIS CLASSES INSTANCE
+ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 """
 
 #!/usr/bin/python3.8
 import math
 import time
-#from ultralytics import YOLO
+
+# from ultralytics import YOLO
 from Triangulation import stereo_vision, monocular_vision, calculate_gsd
 import os
-#from sahi.predict import get_sliced_prediction
-#from sahi import AutoDetectionModel
+
+# from sahi.predict import get_sliced_prediction
+# from sahi import AutoDetectionModel
 import numpy as np
 import cv2
 import tempfile
 from PIL import Image
 import jetson_utils
 from inference_sdk import InferenceHTTPClient
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
-    def __init__(self, l_camera, pitch, spread, sensor_width, fov, GPS_node, log_file):
+    def __init__(self, l_camera, pitch, spread, sensor_width, fov, GPS_node):
         API_KEY = os.getenv("API_KEY")
         self.l_camera = l_camera
         self.pitch = pitch
@@ -32,17 +37,19 @@ class DetectorThreadRunner:
         self.sensor_width = sensor_width
         self.GPS = GPS_node
         # self.d_net = YOLO("model/best.pt")  # Trained YOLOv8 model
- #       print("CREATING DETECTION MODEL FROM PRE TRAINED")
- #       self.detection_model = AutoDetectionModel.from_pretrained(
-#	        model_type="ultralytics",
-#	        model_path="model/best.pt",
-#	        confidence_threshold=0.4,
-#	        device="cuda:0",
-#	    	)
-        self.client = InferenceHTTPClient(api_url="https://detect.roboflow.com", api_key=API_KEY)
+        #       print("CREATING DETECTION MODEL FROM PRE TRAINED")
+        #       self.detection_model = AutoDetectionModel.from_pretrained(
+        # 	        model_type="ultralytics",
+        # 	        model_path="model/best.pt",
+        # 	        confidence_threshold=0.4,
+        # 	        device="cuda:0",
+        # 	    	)
+        self.client = InferenceHTTPClient(
+            api_url="https://detect.roboflow.com", api_key=API_KEY
+        )
         self.weed_loc = None
         self.detection_time = None
-        self.log_f = log_file
+        self.log_f = logger
 
     def thread_loop(self):
         l_image = None
@@ -57,29 +64,26 @@ class DetectorThreadRunner:
         l_image = self.l_camera.img
 
         try:
-                l_image_np = jetson_utils.cudaToNumpy(l_image)
-                l_image_pil = Image.fromarray(l_image_np)
+            l_image_np = jetson_utils.cudaToNumpy(l_image)
+            l_image_pil = Image.fromarray(l_image_np)
 
-                #l_detections = get_sliced_prediction(
-                #    image=l_image_pil,
-                #    detection_model=self.detection_model,
-                #    postprocess_class_agnostic=True,
-                #    overlap_height_ratio=0.2,
-                #    overlap_width_ratio=0.2,
-                #    auto_slice_resolution=True,
-                #)
-                l_detections = self.client.run_workflow(
-		    workspace_name="strawberries-fx9j1",
-		    workflow_id="small-human-detection",
-		    images={
-			"image": l_image_pil
-		    },
-		    use_cache=True
-		)
-                detections = l_detections[0]["predictions"]["predictions"]
-                #print(detections)
-                
-                
+            # l_detections = get_sliced_prediction(
+            #    image=l_image_pil,
+            #    detection_model=self.detection_model,
+            #    postprocess_class_agnostic=True,
+            #    overlap_height_ratio=0.2,
+            #    overlap_width_ratio=0.2,
+            #    auto_slice_resolution=True,
+            # )
+            l_detections = self.client.run_workflow(
+                workspace_name="strawberries-fx9j1",
+                workflow_id="small-human-detection",
+                images={"image": l_image_pil},
+                use_cache=True,
+            )
+            detections = l_detections[0]["predictions"]["predictions"]
+            # print(detections)
+
         except Exception as e:
             print(e)
             return
@@ -91,17 +95,17 @@ class DetectorThreadRunner:
 
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
-        if (detections is not None):
-             #best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
-             best_detection_l, all_detections_l = self.get_best_detection(detections)
+        if detections is not None:
+            # best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
+            best_detection_l, all_detections_l = self.get_best_detection(detections)
         else:
-             print("No weed predictions detected.")
-             return
+            print("No weed predictions detected.")
+            return
 
         if best_detection_l is None:
             print("Cannot find any weed detection in the image")
             return
-        
+
         print("Best detection: ", best_detection_l)
         self.weed_loc, self.detection_time = self.get_weed_loc(
             l_image,
@@ -117,8 +121,8 @@ class DetectorThreadRunner:
             self.detection_time = time_stamp_internal
 
         if self.log_f is not None:
-            self.log_f.write("Detection time: " + str(self.detection_time) + "\n")
-            self.log_f.write("Person location: " + str(self.weed_loc) + "\n\n")
+            self.log_f.info("Detection time: " + str(self.detection_time) + "\n")
+            self.log_f.info("Person location: " + str(self.weed_loc) + "\n\n")
 
     def kill(self):
         self.l_camera.kill()
@@ -131,31 +135,40 @@ class DetectorThreadRunner:
         if detections is not None and len(detections) > 0:
             for i in range(len(detections)):
                 # Check to see if the detection is a 'weed'
-                if (detections[i]["class_id"] == 1 and detections[i]["class"] == "weed"):
+                if detections[i]["class_id"] == 1 and detections[i]["class"] == "weed":
                     weed_detected_list.append(detections[i])
-                    if (best_detection is None or detections[i]["confidence"] > best_detection["confidence"]):
+                    if (
+                        best_detection is None
+                        or detections[i]["confidence"] > best_detection["confidence"]
+                    ):
                         best_detection = detections[i]
 
                 # TEST ONLY W/ Human detection Model:
-                if (detections[i]["class_id"] == 0 and detections[i]["class"] == "person"):
+                if (
+                    detections[i]["class_id"] == 0
+                    and detections[i]["class"] == "person"
+                ):
                     weed_detected_list.append(detections[i])
-                    if (best_detection is None or detections[i]["confidence"] > best_detection["confidence"]):
-                       best_detection = detections[i]
- 
-         # OLD CODE MIGHT NEED LATER    
-         #if detections is not None and len(detections) > 0:
-         #   for i in range(len(detections)):
-         #       # Check to see if the detection is a 'weed'
-         #       if (
-         #           detections[i].category.id == 1
-         #           and detections[i].category.name == "weed"
-         #       ):
-         #           weed_detected_list.append(detections[i])
-         #           if (
-         #               best_detection is None
-         #               or detections[i].score.value > best_detection.score.value
-         #           ):
-         #               best_detection = detections[i]
+                    if (
+                        best_detection is None
+                        or detections[i]["confidence"] > best_detection["confidence"]
+                    ):
+                        best_detection = detections[i]
+
+        # OLD CODE MIGHT NEED LATER
+        # if detections is not None and len(detections) > 0:
+        #   for i in range(len(detections)):
+        #       # Check to see if the detection is a 'weed'
+        #       if (
+        #           detections[i].category.id == 1
+        #           and detections[i].category.name == "weed"
+        #       ):
+        #           weed_detected_list.append(detections[i])
+        #           if (
+        #               best_detection is None
+        #               or detections[i].score.value > best_detection.score.value
+        #           ):
+        #               best_detection = detections[i]
         else:
             return None, None
         return best_detection, weed_detected_list
@@ -175,14 +188,14 @@ class DetectorThreadRunner:
 
         # Calculate the distance, and coordinates using Monocular vision.
         gsd = calculate_gsd(fov, sensor_width, image.shape[1], location["alt"])
-        
+
         # Calculate the center of the bounding box.
-        #x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
-        #y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
-        
+        # x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
+        # y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
+
         x_center = best_l["x"]
         y_center = best_l["y"]
-        
+
         lat, lon = monocular_vision(
             location["lat"],
             location["lon"],
@@ -196,7 +209,7 @@ class DetectorThreadRunner:
             fov,
             sensor_width,
         )
-        
+
         print("Lat: ", lat, " Lon: ", lon)
 
         if lat is not None and lon is not None:
@@ -210,7 +223,7 @@ class DetectorThreadRunner:
             if print_mode is not None:
                 if print_mode == "h":
                     prefix = ">>> High confidence"
-                self.log_f.write(
+                self.log_f.info(
                     prefix
                     + "Monocular Vision: Latitude: "
                     + str(lat)
@@ -218,15 +231,13 @@ class DetectorThreadRunner:
                     + str(lon)
                     + "\n\n"
                 )
-                self.log_f.write(prefix + "Time: " + str(time_stamp) + "\n")
-                self.log_f.write(
-                    "------------------------------------------------------\n"
-                )
+                self.log_f.info(prefix + "Time: " + str(time_stamp) + "\n")
+                self.log_f.info("------------------------------------------------------\n")
             # Return weed GPS and time when this triangulation happened.
             return weed_cords_local, time_stamp
         # Return None when triangulation fails.
         return None, None
-    
+
     def kill(self):
         self.thread.join()
         self.l_camera.kill()

@@ -19,7 +19,6 @@ from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
 from Load_Config import Config
-from Fuse import Fuse
 
 
 class Detector:
@@ -27,10 +26,8 @@ class Detector:
                  camera_pitch, spread=0.8636, sensor_width=3.04, fov=3.04):
         self.detection_timestamp = 0
         self.weed_cords = None
-        self.logfile = open("Detector_last_log.log", "w")
         self.t_runner = DetectorThreadRunner(Jetson_Camera(str(left_input), dir_name, left_save_name),
-                                             pitch=camera_pitch, spread=spread, sensor_width=sensor_width, fov=fov, GPS_node=GPS_node,
-                                             log_file=self.logfile)
+                                             pitch=camera_pitch, spread=spread, sensor_width=sensor_width, fov=fov, GPS_node=GPS_node)
 
         self.isRunning = True
         self.thread = Thread(target=self.loop, args=())

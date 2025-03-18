@@ -7,8 +7,19 @@ from MavLink import MavLink
 from Networking import Network
 from Detector import Detector
 from Load_Config import Config
+import logging
 
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("Detector_last.log")
+    ]
+)
+
+logger = logging.getLogger("Main")
 class Main:
     def __init__(self, conf_dict):
         self.GPS = MavLink(conf_dict['MAVLINK']['directory'], int(conf_dict['MAVLINK']['baud']))
