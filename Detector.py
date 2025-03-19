@@ -19,7 +19,10 @@ from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
 from Load_Config import Config
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class Detector:
     def __init__(self, left_input, left_save_name, dir_name, GPS_node: MavLink,
@@ -75,8 +78,8 @@ class Detector:
         self.isRunning = False
         self.thread.join()
         self.t_runner.kill()
-        self.logfile.write("Detector thread killed, closing the file.")
-        self.logfile.close()
+        #self.logfile.write("Detector thread killed, closing the file.")
+        #self.logfile.close()
 
 
 def kill(core):
@@ -87,5 +90,5 @@ if __name__ == '__main__':
     config_dict = Config(sys.argv[1])
     GPS = MavLink(config_dict.main_dict['MAVLINK']['directory'], config_dict.main_dict['MAVLINK']['baud'])
     #fuse = Fuse(config_dict=config_dict.main_dict['DETECTION_FUSE'])
-    detector = Detector("0", "1", "test_left", "test_left", "./Recordings", fuse, GPS, 0, flip=True)
+    #detector = Detector("0", "1", "test_left", "test_left", "./Recordings", fuse, GPS, 0, flip=True)
     atexit.register(kill, detector)

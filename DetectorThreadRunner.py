@@ -108,6 +108,7 @@ class DetectorThreadRunner:
             return
 
         print("Best detection: ", best_detection_l)
+        self.log_f.info("Best detection: " + str(best_detection_l) + "\n")
         self.weed_loc, self.detection_time = self.get_weed_loc(
             l_image,
             best_detection_l,
@@ -123,7 +124,7 @@ class DetectorThreadRunner:
 
         if self.log_f is not None:
             self.log_f.info("Detection time: " + str(self.detection_time) + "\n")
-            self.log_f.info("Person location: " + str(self.weed_loc) + "\n\n")
+            self.log_f.info("Weed location: " + str(self.weed_loc) + "\n\n")
 
     def kill(self):
         self.l_camera.kill()
@@ -231,7 +232,6 @@ class DetectorThreadRunner:
         self.log_f.info("Image Shape: " + str(image.shape) + "\n")
         self.log_f.info("Center: " + str(x_center) + ", " + str(y_center) + "\n")
         
-        print("Lat: ", lat, " Lon: ", lon)
 
         if lat is not None and lon is not None:
             # If triangulation calculation did not fail, then use "get_weed_GPS()" method to combine, GPS, heading,
@@ -246,13 +246,13 @@ class DetectorThreadRunner:
                     prefix = ">>> High confidence"
                 self.log_f.info(
                     prefix
-                    + "Monocular Vision: Latitude: "
+                    + " Monocular Vision: Latitude: "
                     + str(lat)
                     + " Longitude: "
                     + str(lon)
                     + "\n\n"
                 )
-                self.log_f.info(prefix + "Time: " + str(time_stamp) + "\n")
+                self.log_f.info(prefix + " Time: " + str(time_stamp) + "\n")
                 self.log_f.info("------------------------------------------------------\n")
             # Return weed GPS and time when this triangulation happened.
             return weed_cords_local, time_stamp

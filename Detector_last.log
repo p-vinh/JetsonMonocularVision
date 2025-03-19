@@ -1,0 +1,246 @@
+2025-03-19 16:06:32,448 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:06:32,448 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:06:32,449 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 1789.7518896132578
+2025-03-19 16:06:32,450 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596771, -117.8196708
+2025-03-19 16:06:32,450 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:06:39,011 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:06:39,012 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:06:39,013 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.01109234463021225
+2025-03-19 16:06:39,015 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.059677199999996, -117.8196708
+2025-03-19 16:06:39,015 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:06:46,282 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:06:46,282 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:06:46,282 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.02153974062846141
+2025-03-19 16:06:46,283 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596773, -117.8196706
+2025-03-19 16:06:46,283 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:25,739 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:25,739 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:25,740 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 1787.8889947049674
+2025-03-19 16:07:25,741 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596678, -117.81964669999999
+2025-03-19 16:07:25,741 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:29,070 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:29,070 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:29,071 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 3.0725644575068
+2025-03-19 16:07:29,071 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596854, -117.819621
+2025-03-19 16:07:29,071 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:37,691 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:07:37,692 - DetectorThreadRunner - INFO - Location: {'lat': 34.0596854, 'lon': -117.819621, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:07:37,692 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:07:37,692 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:07:37,692 - DetectorThreadRunner - INFO - Center: 1901.5, 130.5
+
+2025-03-19 16:07:37,693 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.05968539978815 Longitude: -117.81962099999838
+
+
+2025-03-19 16:07:37,693 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425657.6930492
+
+2025-03-19 16:07:37,693 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:07:37,693 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:07:37,693 - DetectorThreadRunner - INFO - Person location: {'lat': 34.05968539978815, 'lon': -117.81962099999838}
+
+
+2025-03-19 16:07:39,096 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:39,096 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:39,097 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.10215613635150284
+2025-03-19 16:07:39,097 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596855, -117.81961989999999
+2025-03-19 16:07:39,097 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:43,390 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:07:43,391 - DetectorThreadRunner - INFO - Location: {'lat': 34.0596855, 'lon': -117.81961989999999, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:07:43,391 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:07:43,391 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:07:43,391 - DetectorThreadRunner - INFO - Center: 297.0, 380.0
+
+2025-03-19 16:07:43,391 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.05968549978815 Longitude: -117.81961989999837
+
+
+2025-03-19 16:07:43,391 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425663.3918052
+
+2025-03-19 16:07:43,392 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:07:43,392 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:07:43,392 - DetectorThreadRunner - INFO - Person location: {'lat': 34.05968549978815, 'lon': -117.81961989999837}
+
+
+2025-03-19 16:07:43,842 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:43,843 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:43,843 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.15300608796772136
+2025-03-19 16:07:43,843 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596844, -117.8196189
+2025-03-19 16:07:43,843 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:48,612 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:07:48,612 - DetectorThreadRunner - INFO - Location: {'lat': 34.0596844, 'lon': -117.8196189, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:07:48,613 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:07:48,613 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:07:48,613 - DetectorThreadRunner - INFO - Center: 651.5, 39.5
+
+2025-03-19 16:07:48,613 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.059684399788146 Longitude: -117.81961889999837
+
+
+2025-03-19 16:07:48,613 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425668.61365
+
+2025-03-19 16:07:48,613 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:07:48,614 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:07:48,614 - DetectorThreadRunner - INFO - Person location: {'lat': 34.059684399788146, 'lon': -117.81961889999837}
+
+
+2025-03-19 16:07:50,505 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:50,505 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:50,506 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.06663095896861392
+2025-03-19 16:07:50,506 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.059683899999996, -117.81961849999999
+2025-03-19 16:07:50,506 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:52,608 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:07:52,609 - DetectorThreadRunner - INFO - Location: {'lat': 34.059683899999996, 'lon': -117.81961849999999, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:07:52,609 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:07:52,610 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:07:52,610 - DetectorThreadRunner - INFO - Center: 709.0, 46.0
+
+2025-03-19 16:07:52,610 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.059683899788155 Longitude: -117.81961849999836
+
+
+2025-03-19 16:07:52,610 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425672.6105175
+
+2025-03-19 16:07:52,610 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:07:52,610 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:07:52,611 - DetectorThreadRunner - INFO - Person location: {'lat': 34.059683899788155, 'lon': -117.81961849999836}
+
+
+2025-03-19 16:07:53,864 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:53,865 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:53,865 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 1.8307561789025086
+2025-03-19 16:07:53,866 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596734, -117.81960319999999
+2025-03-19 16:07:53,866 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:57,804 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:57,805 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:07:57,805 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.06199253430872202
+2025-03-19 16:07:57,805 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596739, -117.81960289999999
+2025-03-19 16:07:57,806 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:07:58,753 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:07:58,753 - DetectorThreadRunner - INFO - Location: {'lat': 34.0596739, 'lon': -117.81960289999999, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:07:58,755 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:07:58,756 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:07:58,756 - DetectorThreadRunner - INFO - Center: 13.5, 354.5
+
+2025-03-19 16:07:58,756 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.059673899788145 Longitude: -117.81960289999836
+
+
+2025-03-19 16:07:58,756 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425678.756613
+
+2025-03-19 16:07:58,757 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:07:58,757 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:07:58,757 - DetectorThreadRunner - INFO - Person location: {'lat': 34.059673899788145, 'lon': -117.81960289999836}
+
+
+2025-03-19 16:08:02,552 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:02,553 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:08:02,553 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.4361334084751996
+2025-03-19 16:08:02,554 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.05967, -117.8196035
+2025-03-19 16:08:02,554 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:03,459 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:08:03,460 - DetectorThreadRunner - INFO - Location: {'lat': 34.05967, 'lon': -117.8196035, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:08:03,460 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:08:03,460 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:08:03,460 - DetectorThreadRunner - INFO - Center: 510.0, 222.0
+
+2025-03-19 16:08:03,460 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.059669999788156 Longitude: -117.81960349999837
+
+
+2025-03-19 16:08:03,461 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425683.4608347
+
+2025-03-19 16:08:03,461 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:08:03,461 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:08:03,461 - DetectorThreadRunner - INFO - Person location: {'lat': 34.059669999788156, 'lon': -117.81960349999837}
+
+
+2025-03-19 16:08:07,193 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:07,194 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:08:07,194 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.03855802706270319
+2025-03-19 16:08:07,194 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596701, -117.8196031
+2025-03-19 16:08:07,194 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:07,663 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:08:07,664 - DetectorThreadRunner - INFO - Location: {'lat': 34.0596701, 'lon': -117.8196031, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:08:07,664 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:08:07,664 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:08:07,664 - DetectorThreadRunner - INFO - Center: 1799.0, 231.5
+
+2025-03-19 16:08:07,665 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.05967009978815 Longitude: -117.81960309999837
+
+
+2025-03-19 16:08:07,665 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425687.6650527
+
+2025-03-19 16:08:07,665 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:08:07,665 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:08:07,665 - DetectorThreadRunner - INFO - Person location: {'lat': 34.05967009978815, 'lon': -117.81960309999837}
+
+
+2025-03-19 16:08:10,461 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:10,461 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:08:10,461 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.02769604123007065
+2025-03-19 16:08:10,462 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.0596701, -117.81960339999999
+2025-03-19 16:08:10,462 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:13,890 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:13,890 - MavLink - INFO - GPS RAW INT
+2025-03-19 16:08:13,891 - MavLink - INFO - MAVLINK GPS:   Devience in GPS is: 0.6265292493245395
+2025-03-19 16:08:13,891 - MavLink - INFO - MAVLINK GPS:   GPS location: 34.059667999999995, -117.8196097
+2025-03-19 16:08:13,891 - MavLink - INFO - -----------------------------------------------------------------
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - Monocular Vision Arguments: 
+
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - Location: {'lat': 34.059667999999995, 'lon': -117.8196097, 'hdg': -1.0, 'alt': 0, 'type': 'GPS_RAW_INT'}
+
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - GSD: 0.0
+
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - Image Shape: (720, 2560, 3)
+
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - Center: 1799.0, 241.0
+
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - >>> High confidenceMonocular Vision: Latitude: 34.05966799978813 Longitude: -117.81960969999837
+
+
+2025-03-19 16:08:18,714 - DetectorThreadRunner - INFO - >>> High confidenceTime: 1742425698.7148442
+
+2025-03-19 16:08:18,715 - DetectorThreadRunner - INFO - ------------------------------------------------------
+
+2025-03-19 16:08:18,715 - DetectorThreadRunner - INFO - Detection time: None
+
+2025-03-19 16:08:18,715 - DetectorThreadRunner - INFO - Person location: {'lat': 34.05966799978813, 'lon': -117.81960969999837}
+
+

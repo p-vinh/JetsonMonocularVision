@@ -54,7 +54,6 @@ class MavLink:
                 last_global_position_recv = time.time()
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
                     logger.info("-----------------------------------------------------------------")
                     logger.info("GLOBAL POSITION INT")
                     logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
@@ -73,7 +72,6 @@ class MavLink:
                 self.allow_read = True
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
                     logger.info("-----------------------------------------------------------------")
                     logger.info("GPS RAW INT")
                     logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
@@ -105,15 +103,12 @@ class MavLink:
             drone_GPS = geopy.Point(self.loc['lat'], self.loc['lon'])
             hdg = self.loc['hdg']
 
-        print("MAVLINK GPS:   Direction to the weed is:", (hdg + offset))
-        print("MAVLINK GPS:   Distance adjusted:", distance_adj)
         # Combine distance from topdown perspective, GPS location of when images were captured and cardinal direction
         # pointing to the target to get GPS location of the target. Cardinal direction to the target is calculated by
         # combining heading of the GPS location and angle that measures deviation from ray pointing forwards and ray
         # pointing to the target. If cameras are pointing in the same direction as GPS of the drone is facing then ray
         # pointing forwards and heading is the same ray.
         weed_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
-        print("MAVLINK GPS:   WEED GPS:", weed_GPS.latitude, weed_GPS.longitude)
         logger.info("-----------------------------------------------------------------")
         logger.info("MAVLINK GPS:   Direction to the weed is: %s", (hdg + offset))
         logger.info("MAVLINK GPS:   Distance adjusted: %s", distance_adj)
