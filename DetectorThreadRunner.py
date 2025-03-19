@@ -10,7 +10,7 @@ import math
 import time
 
 # from ultralytics import YOLO
-from Triangulation import stereo_vision, monocular_vision, calculate_gsd
+from Triangulation import stereo_vision, monocular_vision, calculate_gsd, move_drone_position
 import os
 
 # from sahi.predict import get_sliced_prediction
@@ -196,8 +196,22 @@ class DetectorThreadRunner:
         x_center = best_l["x"]
         y_center = best_l["y"]
 
-        lat, lon = monocular_vision(
-            location["lat"],
+        # lat, lon = monocular_vision(
+        #     location["lat"],
+        #     location["lon"],
+        #     location["alt"],
+        #     location["hdg"],
+        #     gsd,
+        #     image.shape[1],
+        #     image.shape[0],
+        #     x_center,
+        #     y_center,
+        #     fov,
+        #     sensor_width,
+        # )
+        
+        lat, lon = move_drone_position(
+            location["lat"],    
             location["lon"],
             location["alt"],
             location["hdg"],
@@ -207,9 +221,15 @@ class DetectorThreadRunner:
             x_center,
             y_center,
             fov,
-            sensor_width,
-        )
+            sensor_width)
 
+        # ===============LOGGING MONOCULAR VISION================
+        self.log_f.info("Monocular Vision Arguments: \n")
+        self.log_f.info("Location: " + str(location) + "\n")
+        self.log_f.info("GSD: " + str(gsd) + "\n")
+        self.log_f.info("Image Shape: " + str(image.shape) + "\n")
+        self.log_f.info("Center: " + str(x_center) + ", " + str(y_center) + "\n")
+        
         print("Lat: ", lat, " Lon: ", lon)
 
         if lat is not None and lon is not None:
