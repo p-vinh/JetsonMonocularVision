@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 The purpose of this class it to separate variables used inside a detection and geolocation thread and other threads
 that take data from that thread. Mixing up variables between two threads might cause thread conflicts, unless
@@ -5,7 +6,6 @@ operations done on those variables are thread safe. DO NOT BYPASS Detector.py AN
 ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 """
 
-#!/usr/bin/python3.8
 import math
 import time
 
@@ -47,6 +47,7 @@ class DetectorThreadRunner:
         self.client = InferenceHTTPClient(
             api_url="https://detect.roboflow.com", api_key=API_KEY
         )
+
         self.weed_loc = None
         self.detection_time = None
         self.log_f = logger
