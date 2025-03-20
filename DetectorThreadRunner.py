@@ -8,11 +8,9 @@ ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 
 import math
 import time
-
 # from ultralytics import YOLO
 from Triangulation import stereo_vision, monocular_vision, calculate_gsd, move_drone_position
 import os
-
 # from sahi.predict import get_sliced_prediction
 # from sahi import AutoDetectionModel
 import numpy as np
@@ -22,6 +20,7 @@ from PIL import Image
 import jetson_utils
 from inference_sdk import InferenceHTTPClient
 import logging
+from cv2 import imwrite
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +82,9 @@ class DetectorThreadRunner:
                 use_cache=True,
             )
             detections = l_detections[0]["predictions"]["predictions"]
-            # print(detections)
+            print(detections)
+
+            imwrite(f"detection_{time.asctime()}.jpg", detections[0]["output_image"])
 
         except Exception as e:
             print(e)
