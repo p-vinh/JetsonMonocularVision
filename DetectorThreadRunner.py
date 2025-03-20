@@ -44,7 +44,7 @@ class DetectorThreadRunner:
         # 	        device="cuda:0",
         # 	    	)
         self.client = InferenceHTTPClient(
-            api_url="https://detect.roboflow.com", api_key=API_KEY
+            api_url="http://localhost:9001", api_key=API_KEY
         )
 
         self.weed_loc = None
@@ -77,7 +77,7 @@ class DetectorThreadRunner:
             # )
             l_detections = self.client.run_workflow(
                 workspace_name="strawberries-fx9j1",
-                workflow_id="small-human-detection",
+                workflow_id="small-object-detection-sahi-2",
                 images={"image": l_image_pil},
                 use_cache=True,
             )
