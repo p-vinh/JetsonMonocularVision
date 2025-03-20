@@ -14,7 +14,7 @@ class MavLink:
     def __init__(self, connection_str, baud, timeout=3):
         self.GLOBAL_POSITION_TIMEOUT = timeout
 
-        self.loc = {'lat': 34.045004, 'lon': -117.811608, 'hdg': -1.0, 'alt': 0, 'type': 'none'}
+        self.loc = {'lat': 34.045004, 'lon': -117.811608, 'hdg': 0.0, 'alt': 0, 'type': 'none'}
         self.warning = "None"
         self.allow_read = True 
 
@@ -47,7 +47,7 @@ class MavLink:
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
                 self.loc['hdg'] = message.hdg / 100 # Heading in degrees
-                self.loc['alt'] = message.relative_alt
+                self.loc['alt'] = message.alt
                 self.loc['type'] = 'GLOBAL_POSITION_INT'
                 self.warning = "None"
                 self.allow_read = True
@@ -66,16 +66,19 @@ class MavLink:
                 self.allow_read = False
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
+                self.loc['alt'] = message.alt # in mm
+                self.loc['hdg'] = message.yaw / 100 # in cdeg
                 self.loc['type'] = 'GPS_RAW_INT'
                 last_global_position_recv = time.time()
                 self.warning = "WARNING: No 'GLOBAL_POSITION_INT' detected within timeout window"
                 self.allow_read = True
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    logger.info("-----------------------------------------------------------------")
-                    logger.info("GPS RAW INT")
+                    logger.info("-----------------------------------------------------------------\nGPS RAW INT\n")
                     logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
                     logger.info("MAVLINK GPS:   GPS location: %s, %s", self.loc['lat'], self.loc['lon'])
+                    logger.info("MAVLINK GPS:   Heading: %s", self.loc["hdg"])
+                    logger.info("MAVLINK GPS:   Altitude: %s", self.loc["alt"])
                     logger.info("-----------------------------------------------------------------")
 
             time.sleep(0.1)
