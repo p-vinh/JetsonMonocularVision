@@ -44,7 +44,7 @@ class DetectorThreadRunner:
         # 	        device="cuda:0",
         # 	    	)
         self.client = InferenceHTTPClient(
-            api_url="http://localhost:9001", api_key=API_KEY
+            api_url="https://detect.roboflow.com", api_key=API_KEY
         )
 
         self.weed_loc = None
@@ -77,14 +77,16 @@ class DetectorThreadRunner:
             # )
             l_detections = self.client.run_workflow(
                 workspace_name="strawberries-fx9j1",
-                workflow_id="small-object-detection-sahi-2",
+                workflow_id="small-human-detection",
                 images={"image": l_image_pil},
                 use_cache=True,
             )
-            detections = l_detections[0]["predictions"]["predictions"]
-            print(detections)
+            
+            if l_detections is not None:
+               detections = l_detections[0]["predictions"]["predictions"]
+               print(detections)
 
-            imwrite(f"detection_{time.asctime()}.jpg", detections[0]["output_image"])
+   #            imwrite(f"detection_{time.asctime()}.jpg", detections[0]["output_image"])
 
         except Exception as e:
             print(e)

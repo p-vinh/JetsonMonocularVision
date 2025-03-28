@@ -47,7 +47,7 @@ class MavLink:
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
                 self.loc['hdg'] = message.hdg / 100 # Heading in degrees
-                self.loc['alt'] = message.alt
+                self.loc['alt'] = message.relative_alt
                 self.loc['type'] = 'GLOBAL_POSITION_INT'
                 self.warning = "None"
                 self.allow_read = True
