@@ -77,7 +77,7 @@ class DetectorThreadRunner:
             # )
             l_detections = self.client.run_workflow(
                 workspace_name="strawberries-fx9j1",
-                workflow_id="small-human-detection",
+                workflow_id="small-object-detection-sahi",
                 images={"image": l_image_pil},
                 use_cache=True,
             )

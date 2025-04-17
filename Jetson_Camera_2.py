@@ -50,3 +50,6 @@ class Jetson_Camera:
         print("Killing the camera")
         self.alive = False
         self.thread.join()
+
+if __name__ == "__main__":
+    camera = Jetson_Camera(input_num=0, recording_dir=".", recording_name="test", flip=False)
