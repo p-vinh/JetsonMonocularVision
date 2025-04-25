@@ -11,8 +11,8 @@ import time
 # from ultralytics import YOLO
 from Triangulation import stereo_vision, monocular_vision, calculate_gsd, move_drone_position
 import os
-# from sahi.predict import get_sliced_prediction
-# from sahi import AutoDetectionModel
+from sahi.predict import get_sliced_prediction
+from sahi import AutoDetectionModel
 import numpy as np
 import cv2
 import tempfile
@@ -37,15 +37,15 @@ class DetectorThreadRunner:
         self.GPS = GPS_node
         # self.d_net = YOLO("model/best.pt")  # Trained YOLOv8 model
         #       print("CREATING DETECTION MODEL FROM PRE TRAINED")
-        #       self.detection_model = AutoDetectionModel.from_pretrained(
-        # 	        model_type="ultralytics",
-        # 	        model_path="model/best.pt",
-        # 	        confidence_threshold=0.4,
-        # 	        device="cuda:0",
-        # 	    	)
-        self.client = InferenceHTTPClient(
-            api_url="https://detect.roboflow.com", api_key=API_KEY
-        )
+        self.detection_model = AutoDetectionModel.from_pretrained(
+        	        model_type="yolov8",
+         	        model_path="model/weights.pt",
+         	        confidence_threshold=0.4,
+         	        device="cuda:0",
+         	    	)
+        #self.client = InferenceHTTPClient(
+        #    api_url="https://detect.roboflow.com", api_key=API_KEY
+        #)
 
         self.weed_loc = None
         self.detection_time = None
@@ -67,20 +67,22 @@ class DetectorThreadRunner:
             l_image_np = jetson_utils.cudaToNumpy(l_image)
             l_image_pil = Image.fromarray(l_image_np)
 
-            # l_detections = get_sliced_prediction(
-            #    image=l_image_pil,
-            #    detection_model=self.detection_model,
-            #    postprocess_class_agnostic=True,
-            #    overlap_height_ratio=0.2,
-            #    overlap_width_ratio=0.2,
-            #    auto_slice_resolution=True,
-            # )
-            l_detections = self.client.run_workflow(
-                workspace_name="strawberries-fx9j1",
-                workflow_id="small-object-detection-sahi",
-                images={"image": l_image_pil},
-                use_cache=True,
-            )
+            l_detections = get_sliced_prediction(
+                image=l_image_pil,
+                detection_model=self.detection_model,
+                postprocess_class_agnostic=True,
+                overlap_height_ratio=0.2,
+                overlap_width_ratio=0.2,
+                slice_height=360,
+                slice_width=480,
+               # auto_slice_resolution=True,
+             )
+           # l_detections = self.client.run_workflow(
+           #     workspace_name="strawberries-fx9j1",
+           #     workflow_id="small-object-detection-sahi-2",
+           #     images={"image": l_image_pil},
+           #     use_cache=True,
+           # )
             
             if l_detections is not None:
                detections = l_detections[0]["predictions"]["predictions"]

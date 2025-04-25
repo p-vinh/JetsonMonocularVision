@@ -67,7 +67,7 @@ class MavLink:
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
                 self.loc['alt'] = message.alt # in mm
-                self.loc['hdg'] = message.yaw / 100 # in cdeg
+                self.loc['hdg'] = 0 # in cdeg
                 self.loc['type'] = 'GPS_RAW_INT'
                 last_global_position_recv = time.time()
                 self.warning = "WARNING: No 'GLOBAL_POSITION_INT' detected within timeout window"
