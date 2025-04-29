@@ -9,7 +9,7 @@ from Networking import Network
 from Detector import Detector
 from Load_Config import Config
 import logging
-import os
+import os, sys, builtins
 
 LOGFILE = os.path.join(os.path.dirname(__file__), "Detector_last.log")
 
@@ -28,8 +28,11 @@ console.setFormatter(logging.Formatter(
 ))
 logging.getLogger().addHandler(console)
 
-logger = logging.getLogger("Main")
-builtins.print = lambda *args, **kwargs: logger.info(" ".join(map(str, args)))
+_logger = logging.getLogger("Main")
+builtins.print = lambda *args, **kwargs: _logger.info(" ".join(map(str, args)))
+
+logger = _logger
+
 class Main:
     def __init__(self, conf_dict):
         self.GPS = MavLink(conf_dict['MAVLINK']['directory'], int(conf_dict['MAVLINK']['baud']))
