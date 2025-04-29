@@ -14,7 +14,7 @@ class Jetson_Camera:
         self.allow_read = True
 
         self.video_input_id = input_num
-        self.videoInput_setup = ["--input-width=3840", "--input-height=2160", "--input-rate=60.0"]
+        self.videoInput_setup = ["--input-width=1920", "--input-height=1080", "--input-rate=21.0"]
         self.video_input = jetson_utils.videoSource("/dev/video" + str(self.video_input_id), self.videoInput_setup)
 #        self.video_input = jetson_utils.videoSource("file:///home/jetson/test_flight_003.MOV")
         print(recording_name + "Camera input is:" + str(input_num))

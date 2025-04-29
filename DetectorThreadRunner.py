@@ -84,9 +84,9 @@ class DetectorThreadRunner:
            #     use_cache=True,
            # )
             
-            if l_detections is not None:
-               detections = l_detections[0]["predictions"]["predictions"]
-               print(detections)
+#            if l_detections is not None:
+#               detections = l_detections[0]["predictions"]["predictions"]
+#             print(l_detections)
 
    #            imwrite(f"detection_{time.asctime()}.jpg", detections[0]["output_image"])
 
@@ -101,9 +101,9 @@ class DetectorThreadRunner:
 
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
-        if detections is not None:
-            # best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
-            best_detection_l, all_detections_l = self.get_best_detection(detections)
+        if l_detections is not None:
+            best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
+#            best_detection_l, all_detections_l = self.get_best_detection(detections)
         else:
             print("No weed predictions detected.")
             return
@@ -139,43 +139,43 @@ class DetectorThreadRunner:
         best_detection = None
         weed_detected_list = []
 
-        if detections is not None and len(detections) > 0:
-            for i in range(len(detections)):
-                # Check to see if the detection is a 'weed'
-                if detections[i]["class_id"] == 1 and detections[i]["class"] == "weed":
-                    weed_detected_list.append(detections[i])
-                    if (
-                        best_detection is None
-                        or detections[i]["confidence"] > best_detection["confidence"]
-                    ):
-                        best_detection = detections[i]
+        #if detections is not None and len(detections) > 0:
+        #    for i in range(len(detections)):
+        #        # Check to see if the detection is a 'weed'
+        #        if detections[i]["class_id"] == 1 and detections[i]["class"] == "weed":
+        #            weed_detected_list.append(detections[i])
+        #            if (
+        #                best_detection is None
+        #                or detections[i]["confidence"] > best_detection["confidence"]
+        #            ):
+        #                best_detection = detections[i]
 
                 # TEST ONLY W/ Human detection Model:
-                if (
-                    detections[i]["class_id"] == 0
-                    and detections[i]["class"] == "person"
-                ):
-                    weed_detected_list.append(detections[i])
-                    if (
-                        best_detection is None
-                        or detections[i]["confidence"] > best_detection["confidence"]
-                    ):
-                        best_detection = detections[i]
+        #        if (
+        #            detections[i]["class_id"] == 0
+        #            and detections[i]["class"] == "person"
+        #        ):
+        #            weed_detected_list.append(detections[i])
+        #            if (
+        #                best_detection is None
+        #                or detections[i]["confidence"] > best_detection["confidence"]
+        #            ):
+        #                best_detection = detections[i]
 
         # OLD CODE MIGHT NEED LATER
-        # if detections is not None and len(detections) > 0:
-        #   for i in range(len(detections)):
-        #       # Check to see if the detection is a 'weed'
-        #       if (
-        #           detections[i].category.id == 1
-        #           and detections[i].category.name == "weed"
-        #       ):
-        #           weed_detected_list.append(detections[i])
-        #           if (
-        #               best_detection is None
-        #               or detections[i].score.value > best_detection.score.value
-        #           ):
-        #               best_detection = detections[i]
+        if detections is not None and len(detections) > 0:
+           for i in range(len(detections)):
+               # Check to see if the detection is a 'weed'
+               if (
+                   detections[i].category.id == 1
+                   and detections[i].category.name == "weed"
+               ):
+                   weed_detected_list.append(detections[i])
+                   if (
+                       best_detection is None
+                       or detections[i].score.value > best_detection.score.value
+                   ):
+                       best_detection = detections[i]
         else:
             return None, None
         return best_detection, weed_detected_list
