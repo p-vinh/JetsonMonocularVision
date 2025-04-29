@@ -12,12 +12,10 @@ import logging
 
 
 logging.basicConfig(
+    filename='Detector_last.log',
+    filemode='w',                       
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("Detector_last.log")
-    ]
+    format='%(asctime)s %(levelname)s:%(name)s: %(message)s'
 )
 
 logger = logging.getLogger("Main")
