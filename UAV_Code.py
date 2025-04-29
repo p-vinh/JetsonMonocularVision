@@ -9,6 +9,7 @@ from Networking import Network
 from Detector import Detector
 from Load_Config import Config
 import logging
+import os
 
 LOGFILE = os.path.join(os.path.dirname(__file__), "Detector_last.log")
 

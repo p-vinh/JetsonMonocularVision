@@ -1,0 +1,16 @@
+2025-04-29 15:01:13,008 INFO:MavLink: -----------------------------------------------------------------
+GPS RAW INT
+
+2025-04-29 15:01:13,009 INFO:MavLink: MAVLINK GPS:   Devience in GPS is: 1775.034668869505
+2025-04-29 15:01:13,010 INFO:MavLink: MAVLINK GPS:   GPS location: 34.0590471, -117.8208257
+2025-04-29 15:01:13,010 INFO:MavLink: MAVLINK GPS:   Heading: 0
+2025-04-29 15:01:13,010 INFO:MavLink: MAVLINK GPS:   Altitude: 285424
+2025-04-29 15:01:13,010 INFO:MavLink: -----------------------------------------------------------------
+2025-04-29 15:01:16,442 INFO:MavLink: -----------------------------------------------------------------
+GPS RAW INT
+
+2025-04-29 15:01:16,443 INFO:MavLink: MAVLINK GPS:   Devience in GPS is: 0.20165073338891865
+2025-04-29 15:01:16,444 INFO:MavLink: MAVLINK GPS:   GPS location: 34.059046599999995, -117.82082779999999
+2025-04-29 15:01:16,444 INFO:MavLink: MAVLINK GPS:   Heading: 0
+2025-04-29 15:01:16,444 INFO:MavLink: MAVLINK GPS:   Altitude: 284102
+2025-04-29 15:01:16,444 INFO:MavLink: -----------------------------------------------------------------
