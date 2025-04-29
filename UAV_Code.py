@@ -10,12 +10,14 @@ from Detector import Detector
 from Load_Config import Config
 import logging
 
+LOGFILE = os.path.join(os.path.dirname(__file__), "Detector_last.log")
 
 logging.basicConfig(
-    filename='Detector_last.log',
-    filemode='w',                       
+    filename=LOGFILE,
+    filemode='w',
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s:%(name)s: %(message)s'
+    format='%(asctime)s %(levelname)s:%(name)s: %(message)s',
+    force=True                
 )
 
 logger = logging.getLogger("Main")
