@@ -21,7 +21,15 @@ logging.basicConfig(
     force=True                
 )
 
+console = logging.StreamHandler(sys.stdout)
+console.setLevel(logging.INFO)
+console.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s:%(name)s: %(message)s'
+))
+logging.getLogger().addHandler(console)
+
 logger = logging.getLogger("Main")
+builtins.print = lambda *args, **kwargs: logger.info(" ".join(map(str, args)))
 class Main:
     def __init__(self, conf_dict):
         self.GPS = MavLink(conf_dict['MAVLINK']['directory'], int(conf_dict['MAVLINK']['baud']))
