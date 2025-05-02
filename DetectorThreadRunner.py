@@ -9,7 +9,7 @@ ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 import math
 import time
 # from ultralytics import YOLO
-from Triangulation import stereo_vision, monocular_vision, calculate_gsd, move_drone_position
+from Triangulation import stereo_vision, monocular_vision, calculate_gsd
 import os
 from sahi.predict import get_sliced_prediction
 from sahi import AutoDetectionModel
@@ -35,8 +35,7 @@ class DetectorThreadRunner:
         self.fov = fov
         self.sensor_width = sensor_width
         self.GPS = GPS_node
-        # self.d_net = YOLO("model/best.pt")  # Trained YOLOv8 model
-        #       print("CREATING DETECTION MODEL FROM PRE TRAINED")
+
         self.detection_model = AutoDetectionModel.from_pretrained(
         	        model_type="yolov8",
          	        model_path="model/weights.pt",
@@ -191,22 +190,8 @@ class DetectorThreadRunner:
 
         #x_center = best_l["x"]
         #y_center = best_l["y"]
-
-        # lat, lon = monocular_vision(
-        #     location["lat"],
-        #     location["lon"],
-        #     location["alt"],
-        #     location["hdg"],
-        #     gsd,
-        #     image.shape[1],
-        #     image.shape[0],
-        #     x_center,
-        #     y_center,
-        #     fov,
-        #     sensor_width,
-        # )
         
-        lat, lon = move_drone_position(
+        lat, lon = monocular_vision(
             location["lat"],    
             location["lon"],
             location["alt"],

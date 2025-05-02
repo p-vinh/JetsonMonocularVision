@@ -11,11 +11,9 @@ import geopy.distance
 logger = logging.getLogger(__name__)
 #TODO Get the altitude from MavLink
 class MavLink:
-    def __init__(self, connection_str, baud, timeout=3):
-        self.GLOBAL_POSITION_TIMEOUT = timeout
+    def __init__(self, connection_str, baud):
 
         self.loc = {'lat': 34.045004, 'lon': -117.811608, 'hdg': 0.0, 'alt': 0, 'type': 'none'}
-        self.warning = "None"
         self.allow_read = True 
 
         self.is_running = True
@@ -27,10 +25,6 @@ class MavLink:
         self.thread.deamon = True
         self.thread.start()
 
-    '''def __init__(self):
-        self.loc = {'lat': -91, 'lon': -181, 'hdg': -1.0, 'type': 'none'}
-        self.allow_read = True
-        self.is_running = False'''
     def loop(self):
         #return
         last_global_position_recv = time.time()
@@ -47,9 +41,7 @@ class MavLink:
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
                 self.loc['hdg'] = message.hdg / 100 # Heading in degrees
-                self.loc['alt'] = message.relative_alt / 1000
                 self.loc['type'] = 'GLOBAL_POSITION_INT'
-                self.warning = "None"
                 self.allow_read = True
                 last_global_position_recv = time.time()
                 if old_loc is not None:
@@ -59,6 +51,14 @@ class MavLink:
                     logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
                     logger.info("MAVLINK GPS:   GPS location: %s, %s", self.loc['lat'], self.loc['lon'])
                     logger.info("MAVLINK GPS:   Heading: %s", self.loc['hdg'])
+                    logger.info("-----------------------------------------------------------------")
+            if message is not None and message.get_type() == 'ALTITUDE':
+                self.allow_read = False
+                self.loc['alt'] = message.altitude_terrain if message.altitude_terrain <= -1000 else None
+                self.allow_read = True
+                if time.time() - last_global_position_recv > 1.0:
+                    logger.info("-----------------------------------------------------------------")
+                    logger.info("ALTITUDE")
                     logger.info("MAVLINK GPS:   Altitude: %s", self.loc['alt'])
                     logger.info("-----------------------------------------------------------------")
             
