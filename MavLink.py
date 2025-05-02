@@ -47,7 +47,7 @@ class MavLink:
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
                 self.loc['hdg'] = message.hdg / 100 # Heading in degrees
-                self.loc['alt'] = message.relative_alt
+                self.loc['alt'] = message.relative_alt / 1000
                 self.loc['type'] = 'GLOBAL_POSITION_INT'
                 self.warning = "None"
                 self.allow_read = True
@@ -62,25 +62,6 @@ class MavLink:
                     logger.info("MAVLINK GPS:   Altitude: %s", self.loc['alt'])
                     logger.info("-----------------------------------------------------------------")
             
-            if message is not None and time.time() - last_global_position_recv > self.GLOBAL_POSITION_TIMEOUT and message.get_type() == 'GPS_RAW_INT':
-                self.allow_read = False
-                self.loc['lat'] = message.lat * (10 ** -7)
-                self.loc['lon'] = message.lon * (10 ** -7)
-                self.loc['alt'] = message.alt # in mm
-                self.loc['hdg'] = 0 # in cdeg
-                self.loc['type'] = 'GPS_RAW_INT'
-                last_global_position_recv = time.time()
-                self.warning = "WARNING: No 'GLOBAL_POSITION_INT' detected within timeout window"
-                self.allow_read = True
-                if old_loc is not None:
-                    current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    logger.info("-----------------------------------------------------------------\nGPS RAW INT\n")
-                    logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
-                    logger.info("MAVLINK GPS:   GPS location: %s, %s", self.loc['lat'], self.loc['lon'])
-                    logger.info("MAVLINK GPS:   Heading: %s", self.loc["hdg"])
-                    logger.info("MAVLINK GPS:   Altitude: %s", self.loc["alt"])
-                    logger.info("-----------------------------------------------------------------")
-
             time.sleep(0.1)
 
     def get_weed_GPS(self, distance, angle, cords, vertical_angle=0, mount_pitch=0):

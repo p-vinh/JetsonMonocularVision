@@ -57,6 +57,7 @@ class DetectorThreadRunner:
         l_detections = []
         best_detection_l = None
         time_stamp_internal = None
+        counter = 0
 
         # Get images from both cameras. A list of images is returned from the camera thread. The first image in the top right corner of the original image.
         while not self.l_camera.allow_read:
@@ -75,15 +76,15 @@ class DetectorThreadRunner:
                 overlap_width_ratio=0.2,
                 slice_height=360,
                 slice_width=480,
-               # auto_slice_resolution=True,
-             )
+            )
+            l_detections.export_visuals(export_dir="Images", file_name=str(counter))
+            counter += 1
            # l_detections = self.client.run_workflow(
            #     workspace_name="strawberries-fx9j1",
            #     workflow_id="small-object-detection-sahi-2",
            #     images={"image": l_image_pil},
            #     use_cache=True,
-           # )
-            
+           #
 #            if l_detections is not None:
 #               detections = l_detections[0]["predictions"]["predictions"]
 #             print(l_detections)
@@ -150,18 +151,6 @@ class DetectorThreadRunner:
         #            ):
         #                best_detection = detections[i]
 
-                # TEST ONLY W/ Human detection Model:
-        #        if (
-        #            detections[i]["class_id"] == 0
-        #            and detections[i]["class"] == "person"
-        #        ):
-        #            weed_detected_list.append(detections[i])
-        #            if (
-        #                best_detection is None
-        #                or detections[i]["confidence"] > best_detection["confidence"]
-        #            ):
-        #                best_detection = detections[i]
-
         # OLD CODE MIGHT NEED LATER
         if detections is not None and len(detections) > 0:
            for i in range(len(detections)):
@@ -197,11 +186,11 @@ class DetectorThreadRunner:
         gsd = calculate_gsd(fov, sensor_width, image.shape[1], location["alt"])
 
         # Calculate the center of the bounding box.
-        # x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
-        # y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
+        x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
+        y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
 
-        x_center = best_l["x"]
-        y_center = best_l["y"]
+        #x_center = best_l["x"]
+        #y_center = best_l["y"]
 
         # lat, lon = monocular_vision(
         #     location["lat"],
