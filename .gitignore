@@ -10,3 +10,7 @@ Jetson_Lib_23_11_8.zip
 !Configs/ZedConfig.conf
 .env
 run_project.sh
+
+
+.vscode
+__pycache__/
