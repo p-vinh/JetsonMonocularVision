@@ -1,20 +1,20 @@
+#!/usr/bin/python
 import atexit
 import math
-
+import logging
 from pymavlink import mavutil
 from threading import Thread
 import time
 import geopy
 import geopy.distance
 
-
+logger = logging.getLogger(__name__)
+#TODO Get the altitude from MavLink
 class MavLink:
-    def __init__(self, connection_str, baud, timeout=3):
-        self.GLOBAL_POSITION_TIMEOUT = timeout
+    def __init__(self, connection_str, baud):
 
-        self.loc = {'lat': -91, 'lon': -181, 'hdg': -1.0, 'type': 'none'}
-        self.warning = "None"
-        self.allow_read = True
+        self.loc = {'lat': 34.045004, 'lon': -117.811608, 'hdg': 0.0, 'alt': 0, 'type': 'none'}
+        self.allow_read = True 
 
         self.is_running = True
 
@@ -25,15 +25,13 @@ class MavLink:
         self.thread.deamon = True
         self.thread.start()
 
-    '''def __init__(self):
-        self.loc = {'lat': -91, 'lon': -181, 'hdg': -1.0, 'type': 'none'}
-        self.allow_read = True
-        self.is_running = False'''
     def loop(self):
+        #return
         last_global_position_recv = time.time()
 
         while self.is_running:
             message = self.connection.recv_match()
+            
             if 90 >= self.loc['lat'] >= -90:
                 old_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
             else:
@@ -42,28 +40,31 @@ class MavLink:
                 self.allow_read = False
                 self.loc['lat'] = message.lat * (10 ** -7)
                 self.loc['lon'] = message.lon * (10 ** -7)
-                self.loc['hdg'] = message.hdg / 100
+                self.loc['hdg'] = message.hdg / 100 # Heading in degrees
                 self.loc['type'] = 'GLOBAL_POSITION_INT'
-                self.warning = "None"
                 self.allow_read = True
                 last_global_position_recv = time.time()
                 if old_loc is not None:
                     current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    # print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
-            if message is not None and time.time() - last_global_position_recv > self.GLOBAL_POSITION_TIMEOUT and message.get_type() == 'GPS_RAW_INT':
+                    logger.info("-----------------------------------------------------------------")
+                    logger.info("GLOBAL POSITION INT")
+                    logger.info("MAVLINK GPS:   Devience in GPS is: %s", geopy.distance.geodesic(old_loc, current_loc).meters)
+                    logger.info("MAVLINK GPS:   GPS location: %s, %s", self.loc['lat'], self.loc['lon'])
+                    logger.info("MAVLINK GPS:   Heading: %s", self.loc['hdg'])
+                    logger.info("-----------------------------------------------------------------")
+            if message is not None and message.get_type() == 'ALTITUDE':
                 self.allow_read = False
-                self.loc['lat'] = message.lat * (10 ** -7)
-                self.loc['lon'] = message.lon * (10 ** -7)
-                self.loc['type'] = 'GPS_RAW_INT'
-                last_global_position_recv = time.time()
-                self.warning = "WARNING: No 'GLOBAL_POSITION_INT' detected within timeout window"
+                self.loc['alt'] = message.altitude_terrain if message.altitude_terrain <= -1000 else None
                 self.allow_read = True
-                if old_loc is not None:
-                    current_loc = geopy.Point(self.loc['lat'], self.loc['lon'])
-                    # print("MAVLINK GPS:   Devience in GPS is:", geopy.distance.geodesic(old_loc, current_loc).meters)
+                if time.time() - last_global_position_recv > 1.0:
+                    logger.info("-----------------------------------------------------------------")
+                    logger.info("ALTITUDE")
+                    logger.info("MAVLINK GPS:   Altitude: %s", self.loc['alt'])
+                    logger.info("-----------------------------------------------------------------")
+            
             time.sleep(0.1)
 
-    def get_persons_GPS(self, distance, angle, cords, vertical_angle=0, mount_pitch=0):
+    def get_weed_GPS(self, distance, angle, cords, vertical_angle=0, mount_pitch=0):
         # "angle" is measured from a ray going directly to the right, but GPS need it to be relative to the ray going
         # straight forward. This does that conversion
         offset = angle - 90
@@ -86,16 +87,19 @@ class MavLink:
             drone_GPS = geopy.Point(self.loc['lat'], self.loc['lon'])
             hdg = self.loc['hdg']
 
-        # print("MAVLINK GPS:   Direction to the person is:", (hdg + offset))
-        print("MAVLINK GPS:   Distance adjusted:", distance_adj)
         # Combine distance from topdown perspective, GPS location of when images were captured and cardinal direction
         # pointing to the target to get GPS location of the target. Cardinal direction to the target is calculated by
         # combining heading of the GPS location and angle that measures deviation from ray pointing forwards and ray
         # pointing to the target. If cameras are pointing in the same direction as GPS of the drone is facing then ray
         # pointing forwards and heading is the same ray.
-        person_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
-        return {'lat': person_GPS.latitude, 'lon': person_GPS.longitude}
-
+        weed_GPS = geopy.distance.geodesic(meters=distance_adj).destination(drone_GPS, hdg + offset)
+        logger.info("-----------------------------------------------------------------")
+        logger.info("MAVLINK GPS:   Direction to the weed is: %s", (hdg + offset))
+        logger.info("MAVLINK GPS:   Distance adjusted: %s", distance_adj)
+        logger.info("MAVLINK GPS:   WEED GPS: %s, %s", weed_GPS.latitude, weed_GPS.longitude)
+        logger.info("-----------------------------------------------------------------")
+        return {'lat': weed_GPS.latitude, 'lon': weed_GPS.longitude}
+        
     def is_thread_alive(self):
         return self.thread.is_alive()
     def kill(self):

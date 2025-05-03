@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3.10
+
 import atexit
 import sys
 import time
@@ -7,22 +8,42 @@ from MavLink import MavLink
 from Networking import Network
 from Detector import Detector
 from Load_Config import Config
+import logging
+import os, sys, builtins
 
+LOGFILE = os.path.join(os.path.dirname(__file__), "Detector_last.log")
+
+logging.basicConfig(
+    filename=LOGFILE,
+    filemode='w',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s:%(name)s: %(message)s',
+    force=True                
+)
+
+console = logging.StreamHandler(sys.stdout)
+console.setLevel(logging.INFO)
+console.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s:%(name)s: %(message)s'
+))
+logging.getLogger().addHandler(console)
+
+_logger = logging.getLogger("Main")
+builtins.print = lambda *args, **kwargs: _logger.info(" ".join(map(str, args)))
+
+logger = _logger
 
 class Main:
     def __init__(self, conf_dict):
         self.GPS = MavLink(conf_dict['MAVLINK']['directory'], int(conf_dict['MAVLINK']['baud']))
         self.Detection_and_Location = Detector(left_input=conf_dict['DETECTION']['left'],
-                                               right_input=conf_dict['DETECTION']['right'],
                                                left_save_name=conf_dict['DETECTION']['left_savename'],
-                                               right_save_name=conf_dict['DETECTION']['right_savename'],
                                                dir_name=conf_dict['DETECTION']['directory'],
                                                camera_pitch=float(conf_dict['DETECTION']['camera_pitch']),
                                                GPS_node=self.GPS,
                                                spread=float(conf_dict['DETECTION']['camera_sep']),
-                                               fov=float(conf_dict['DETECTION']['camera_fov']),
-                                               threshold_fuse=conf_dict['DETECTION_FUSE'],
-                                               flip=bool(conf_dict['DETECTION']['flip']))
+                                               sensor_width=float(conf_dict['DETECTION']['sensor_width']),
+                                               fov=float(conf_dict['DETECTION']['camera_fov']))
         self.Network = Network((conf_dict['NETWORKING']['GROUND_STATION_IP'],
                                 conf_dict['NETWORKING']['GROUND_STATION_PORT']),
                                (conf_dict['NETWORKING']['HUSKY_IP'],

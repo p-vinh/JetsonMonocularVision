@@ -1,10 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
+import atexit
 from datetime import datetime
 from threading import Thread
 import jetson_utils
 
-
+# Will not be using, jetson_utils but instead using cv2.VideoCapture because we are using a Yolo model 
 class Jetson_Camera:
 
     def __init__(self, input_num, recording_dir, recording_name, flip=False):
@@ -14,16 +15,15 @@ class Jetson_Camera:
 
         self.video_input_id = input_num
         self.videoInput_setup = ["--input-width=1920", "--input-height=1080", "--input-rate=21.0"]
-        if flip:
-            self.videoInput_setup.append("--input-flip=rotate-180")
-            print("CAMERA:    Added 180 deg rotation")
-        self.video_input = jetson_utils.videoSource(str(self.video_input_id), self.videoInput_setup)
+        self.video_input = jetson_utils.videoSource("/dev/video" + str(self.video_input_id), self.videoInput_setup)
+#        self.video_input = jetson_utils.videoSource("file:///home/jetson/test_flight_003.MOV")
         print(recording_name + "Camera input is:" + str(input_num))
 
         if recording_name is None:
             now = datetime.now()
             recording_name = now.strftime("%Y-%m-%d_%H_%M_%S")
         self.output = jetson_utils.videoOutput(os.path.join(recording_dir, recording_name + '.avi'))
+        #atexit.register(self.kill)
         self.alive = True
         self.thread = Thread(target=self.loop, args=())
         self.thread.deamon = True
@@ -52,3 +52,6 @@ class Jetson_Camera:
         print("Killing the camera")
         self.alive = False
         self.thread.join()
+
+if __name__ == "__main__":
+    camera = Jetson_Camera(input_num=0, recording_dir=".", recording_name="test", flip=False)

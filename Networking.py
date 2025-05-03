@@ -26,10 +26,16 @@ class Network:
 
         print("NETWORKING:    GS dict", (self.GS_dict[0], int(self.GS_dict[1])))
         print("NETWORKING:    HUSKY Dict", (self.HUSKY_dict[0], int(self.HUSKY_dict[1])))
-#        self.GS = self.connect((self.GS_dict[0], int(self.GS_dict[1])))
-        self.HUSKY = self.connect((self.HUSKY_dict[0], int(self.HUSKY_dict[1])))
-        time.sleep(0.3)
-
+        
+        try:
+            self.HUSKY = self.connect((self.HUSKY_dict[0], int(self.HUSKY_dict[1])))
+            time.sleep(0.3)
+        except Exception as e:
+            print("Could not connect to HUSKY")
+        
+            # self.GS = self.connect((self.GS_dict[0], int(self.GS_dict[1])))
+            time.sleep(0.3)
+        
 #        self.send_to_GS("DRONE")
         self.send_to_HUSKY("DRONE")
 
@@ -61,13 +67,17 @@ class Network:
 
 
     def connect(self, IP_Port_dict: dict):
-        soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        soc.connect(IP_Port_dict)
-        fcntl.fcntl(soc, fcntl.F_SETFL, os.O_NONBLOCK)
-        # soc.setblocking(True)
+        try:
+            soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            soc.connect(IP_Port_dict)
+            # fcntl.fcntl(soc, fcntl.F_SETFL, os.O_NONBLOCK)
+            # soc.setblocking(True)
 
-        return soc
-
+            return soc
+        except Exception as e:
+            print("Could not connect to ", IP_Port_dict)
+            sys.exit(1)
+    
     def receive_data(self, sock):
         buffer = b''
         try:

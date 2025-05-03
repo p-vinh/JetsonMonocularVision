@@ -1,157 +1,244 @@
+#!/usr/bin/python3
 """
-   The purpose of this class it to separate variables used inside a detection and geolocation thread and other threads
-   that take data from that thread. Mixing up variables between two threads might cause thread conflicts, unless
-   operations done on those variables are thread safe. DO NOT BYPASS Detector.py AND READ FOM THIS CLASSES INSTANCE
-   ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
+The purpose of this class it to separate variables used inside a detection and geolocation thread and other threads
+that take data from that thread. Mixing up variables between two threads might cause thread conflicts, unless
+operations done on those variables are thread safe. DO NOT BYPASS Detector.py AND READ FOM THIS CLASSES INSTANCE
+ATTRIBUTES. USE GETTERS METHODS IN Detector.py INSTANCE.
 """
 
 import math
 import time
-import Fuse
-import jetson_inference
-from Triangulation import stereo_vision
+# from ultralytics import YOLO
+from Triangulation import stereo_vision, monocular_vision, calculate_gsd
+import os
+from sahi.predict import get_sliced_prediction
+from sahi import AutoDetectionModel
+import numpy as np
+import cv2
+import tempfile
+from PIL import Image
+import jetson_utils
+from inference_sdk import InferenceHTTPClient
+import logging
+from cv2 import imwrite
+
+logger = logging.getLogger(__name__)
 
 
+# Left camera will be used as a main camera. For Monocular vision
 class DetectorThreadRunner:
-    def __init__(self, l_camera, r_camera, pitch, spread, fov, t_fuse, GPS_node, log_file):
+    def __init__(self, l_camera, pitch, spread, sensor_width, fov, GPS_node):
+        API_KEY = os.getenv("API_KEY")
         self.l_camera = l_camera
-        self.r_camera = r_camera
         self.pitch = pitch
         self.spread = spread
         self.fov = fov
+        self.sensor_width = sensor_width
         self.GPS = GPS_node
-#        self.d_net = jetson_inference.detectNet(model="model/ssd-mobilenet.onnx", labels="model/labels.txt", input_blob="input_0", output_cvg="scores", output_bbox="boxes")
-        self.d_net = jetson_inference.detectNet()
-        self.person_loc = None
-        self.detection_time = None
-        self.log_f = log_file
-        self.detect_fuse = Fuse.Fuse(t_fuse)
 
-    def swap_cameras(self):
-        self.l_camera, self.r_camera = self.r_camera, self.l_camera
+        self.detection_model = AutoDetectionModel.from_pretrained(
+        	        model_type="yolov8",
+         	        model_path="model/weights.pt",
+         	        confidence_threshold=0.4,
+         	        device="cuda:0",
+         	    	)
+        #self.client = InferenceHTTPClient(
+        #    api_url="https://detect.roboflow.com", api_key=API_KEY
+        #)
+
+        self.weed_loc = None
+        self.detection_time = None
+        self.log_f = logger
 
     def thread_loop(self):
-        r_image = None
         l_image = None
         image_location = None
-        l_detections = None
-        r_detections = None
+        l_detections = []
         best_detection_l = None
-        best_detection_r = None
-        person_location_internal = None
         time_stamp_internal = None
+        counter = 0
 
-        # Get images from both cameras.
+        # Get images from both cameras. A list of images is returned from the camera thread. The first image in the top right corner of the original image.
         while not self.l_camera.allow_read:
             pass
         l_image = self.l_camera.img
 
-        while not self.r_camera.allow_read:
-            pass
-        r_image = self.r_camera.img
+        try:
+            l_image_np = jetson_utils.cudaToNumpy(l_image)
+            l_image_pil = Image.fromarray(l_image_np)
 
+            l_detections = get_sliced_prediction(
+                image=l_image_pil,
+                detection_model=self.detection_model,
+                postprocess_class_agnostic=True,
+                overlap_height_ratio=0.2,
+                overlap_width_ratio=0.2,
+                slice_height=360,
+                slice_width=480,
+            )
+            l_detections.export_visuals(export_dir="Images", file_name=str(counter))
+            counter += 1
+           # l_detections = self.client.run_workflow(
+           #     workspace_name="strawberries-fx9j1",
+           #     workflow_id="small-object-detection-sahi-2",
+           #     images={"image": l_image_pil},
+           #     use_cache=True,
+           #
+#            if l_detections is not None:
+#               detections = l_detections[0]["predictions"]["predictions"]
+#             print(l_detections)
+
+   #            imwrite(f"detection_{time.asctime()}.jpg", detections[0]["output_image"])
+
+        except Exception as e:
+            print(e)
+            return
         # Get GPS location from Mavlink module. Scene GPS is read at about the same time its safe to assume that the
         # location stores is tah location at which those pictures were taken.
         while not self.GPS.allow_read:
             pass
         image_location = self.GPS.loc
-        
-        try:
-            # Use Jetson detect net to get a list of objects detected in left and right images
-            if l_image is not None:
-               l_detections = self.d_net.Detect(l_image, overlay="box,labels,conf")
-            if r_image is not None: 
-               r_detections = self.d_net.Detect(r_image, overlay="box,labels,conf")
-            
-        except Exception as e:
-            print("Error: ", e)
+
         # Go through list of objects detected on the left and find a box with the highest confidence value.
         # "all_detections_l" variable is not used anywhere it's just a leftover from debugging.
-        best_detection_l, all_detections_l = self.get_best_detection(l_detections)
-        # Do the same for right image
-        best_detection_r, all_detections_r = self.get_best_detection(r_detections)
-
-        """
-            For triangulation to work with multiple targets, triangulation code has to know which detection in left 
-            image correlates to which detection in the right image. In this case an assumption is made: the detection
-            with the highest confidence in the left image corresponds to the right image's highest confidence detection.
-            So, best detection in the left image is the same target as the right image best detection. Then 
-            triangulation will be performed on those two detections. 
-        """
-
-        if best_detection_l is None or best_detection_r is None:
-            # If only one of the cameras got a detection or neither, the that means it might be a false positive or,
-            # target is too far away. In ether case triangulation should be delayed. So, the fuse is punished (fined).
-            self.detect_fuse.punish()
+        if l_detections is not None:
+            best_detection_l, all_detections_l = self.get_best_detection(l_detections.object_prediction_list)
+#            best_detection_l, all_detections_l = self.get_best_detection(detections)
         else:
-            # If both images got a detection, the reward the fuse, indicating that detections is likely is not a false
-            # positive and target is close.
-            self.detect_fuse.reward()
-            if self.detect_fuse:
-                # If fuse fused, that there were multiple high confidence detection in a short period of time. So,
-                # a triangulation is performed and the results of this triangulation will be sent to other threads.
-                self.person_loc, self.detection_time = self.get_persons_loc(l_image, best_detection_l,
-                                                                            best_detection_r, image_location,
-                                                                            self.spread, self.fov,
-                                                                            print_mode="h")
-            else:
-                # low confidence triangulation, just prints to a file. Results of this triangulation will not be sent to
-                # other threads.
-                self.get_persons_loc(l_image, best_detection_l, best_detection_r, self.spread, self.fov,
-                                     image_location, print_mode="l")
+            print("No weed predictions detected.")
+            return
 
-        if person_location_internal is not None:
-            self.person_loc = person_location_internal
+        if best_detection_l is None:
+            print("Cannot find any weed detection in the image")
+            return
+
+        print("Best detection: ", best_detection_l)
+        self.log_f.info("Best detection: " + str(best_detection_l) + "\n")
+        self.weed_loc, self.detection_time = self.get_weed_loc(
+            l_image,
+            best_detection_l,
+            self.sensor_width,
+            self.fov,
+            image_location,
+            print_mode="h",
+        )
+
+        if self.weed_loc is not None:
+            self.weed_loc = self.weed_loc
             self.detection_time = time_stamp_internal
+
+        if self.log_f is not None:
+            self.log_f.info("Detection time: " + str(self.detection_time) + "\n")
+            self.log_f.info("Weed location: " + str(self.weed_loc) + "\n\n")
 
     def kill(self):
         self.l_camera.kill()
-        self.r_camera.kill()
 
-    def get_best_detection(self, detections: list):
+    # TODO: Determine what is returned by the YOLOv8 model
+    def get_best_detection(self, detections):
         best_detection = None
-        people_detected_list = []
+        weed_detected_list = []
 
-        if len(detections) > 0:
-            for detection in detections:
-                if self.d_net.GetClassDesc(detection.ClassID) == 'person':
-                    people_detected_list.append(detection)
-                    if best_detection is None or detection.Confidence > best_detection.Confidence:
-                        best_detection = detection
+        #if detections is not None and len(detections) > 0:
+        #    for i in range(len(detections)):
+        #        # Check to see if the detection is a 'weed'
+        #        if detections[i]["class_id"] == 1 and detections[i]["class"] == "weed":
+        #            weed_detected_list.append(detections[i])
+        #            if (
+        #                best_detection is None
+        #                or detections[i]["confidence"] > best_detection["confidence"]
+        #            ):
+        #                best_detection = detections[i]
+
+        # OLD CODE MIGHT NEED LATER
+        if detections is not None and len(detections) > 0:
+           for i in range(len(detections)):
+               # Check to see if the detection is a 'weed'
+               if (
+                   detections[i].category.id == 1
+                   and detections[i].category.name == "weed"
+               ):
+                   weed_detected_list.append(detections[i])
+                   if (
+                       best_detection is None
+                       or detections[i].score.value > best_detection.score.value
+                   ):
+                       best_detection = detections[i]
         else:
             return None, None
-        return best_detection, people_detected_list
+        return best_detection, weed_detected_list
 
-    def get_persons_loc(self, image, best_l, best_r, spread, fov, location, print_mode=None):
+    def get_weed_loc(self, image, best_l, sensor_width, fov, location, print_mode=None):
         time_stamp = None
         prefix = "Low confidence"
-        persons_cords_local = None
+        weed_cords_local = None
         # Triangulation function will perform calculations to get direct distance, horizontal angle, and a vertical
-        # angle to the target. Returns None if calculation fails.
-        # For each tile in the image, calculate the distance, angle, and vertical angle to the target.
+        # angle to the target. Returns None if calculation fails. !REQUIRES RIGHT IMAGE FOR STEREO VISION!
+        # distance, angle, vertical = stereo_vision(spread=spread,
+        #                                           center_right=best_r[:2],  # Assuming center coordinates are at index 0 and 1
+        #                                           center_left=best_l[:2],  # Assuming center coordinates are at index 0 and 1
+        #                                           fov=fov,
+        #                                           image_width=image.shape[1],
+        #                                           image_height=image.shape[0])
+
+        # Calculate the distance, and coordinates using Monocular vision.
+        gsd = calculate_gsd(fov, sensor_width, image.shape[1], location["alt"])
+
+        # Calculate the center of the bounding box.
+        x_center = (best_l.bbox.minx + best_l.bbox.maxx) / 2
+        y_center = (best_l.bbox.miny + best_l.bbox.maxy) / 2
+
+        #x_center = best_l["x"]
+        #y_center = best_l["y"]
         
-        distance, angle, vertical = stereo_vision(spread=spread,
-                                                center_right=best_r.Center,
-                                                center_left=best_l.Center,
-                                                fov=fov,
-                                                image_width=image.width,
-                                                image_height=image.height)
-        if not math.isnan(distance):
-            # If triangulation calculation did not fail, then use "get_persons_GPS()" method to combine, GPS, heading,
+        lat, lon = monocular_vision(
+            location["lat"],    
+            location["lon"],
+            location["alt"],
+            location["hdg"],
+            gsd,
+            image.shape[1],
+            image.shape[0],
+            x_center,
+            y_center,
+            fov,
+            sensor_width)
+
+        # ===============LOGGING MONOCULAR VISION================
+        self.log_f.info("Monocular Vision Arguments: \n")
+        self.log_f.info("Location: " + str(location) + "\n")
+        self.log_f.info("GSD: " + str(gsd) + "\n")
+        self.log_f.info("Image Shape: " + str(image.shape) + "\n")
+        self.log_f.info("Center: " + str(x_center) + ", " + str(y_center) + "\n")
+        
+
+        if lat is not None and lon is not None:
+            # If triangulation calculation did not fail, then use "get_weed_GPS()" method to combine, GPS, heading,
             # horizontal and vertical angles, camera pitch angle, and distance to predict targets GPS location.
-            persons_cords_local = self.GPS.get_persons_GPS(distance, angle, location,
-                                                        vertical, self.pitch)
-            # Save the timestamp of when this triangulation happened.
+            # weed_cords_local = self.GPS.get_weed_GPS(distance, angle, location,
+            #                                                vertical, self.pitch)
+            weed_cords_local = {"lat": lat, "lon": lon}
             time_stamp = time.time()
             # Print to log file.
             if print_mode is not None:
                 if print_mode == "h":
                     prefix = ">>> High confidence"
-                self.log_f.write(prefix + " distance:" + str(distance) + "\n")
-                self.log_f.write(prefix + " horizontal angle:" + str(angle) + "\n")
-                self.log_f.write(prefix + " vertical angle:" + str(vertical) + "\n")
-                self.log_f.write(prefix + " coordinates:" + str(persons_cords_local) + "\n\n")
-            # Return persons GPS and time when this triangulation happened.
-            return persons_cords_local, time_stamp
+                self.log_f.info(
+                    prefix
+                    + " Monocular Vision: Latitude: "
+                    + str(lat)
+                    + " Longitude: "
+                    + str(lon)
+                    + "\n\n"
+                )
+                self.log_f.info(prefix + " Time: " + str(time_stamp) + "\n")
+                self.log_f.info("------------------------------------------------------\n")
+            # Return weed GPS and time when this triangulation happened.
+            return weed_cords_local, time_stamp
         # Return None when triangulation fails.
         return None, None
+
+    def kill(self):
+        self.thread.join()
+        self.l_camera.kill()
+        return

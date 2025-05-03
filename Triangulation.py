@@ -1,4 +1,6 @@
 import math
+import utm
+
 
 
 def stereo_vision(spread, center_right, center_left, fov, image_width, image_height):
@@ -78,5 +80,186 @@ def stereo_vision(spread, center_right, center_left, fov, image_width, image_hei
     # deviation, and only tells how many degrees is the line of sight to the target is above the horizontal plane of
     # the camera.
     return distance_average, angle_center_target, vertical_angle
+
+
+"""
+A lower value for GSD means a more accurate survey. Your survey cannot be more accurate than your GSD.
+The range for UAV photogrammetry typically falls between 1.5 to 2.5 cm/px (.6 to 1 inch).
+Some recommend a ground sample distance of 1 cm/px for professional surveys, which is very low.
+Source: (https://snehilsanyal.github.io/files/paper1.pdf)
+"""
+""" PROTOTYPE FUNCTION """
+def monocular_vision_prototype(drone_lat, drone_lon, drone_alt, drone_hdg, gsd, image_width, image_height, pixel_x, pixel_y, focal_length, sensor_width):
+    """
+    Calculate the GPS location of a point in an image.
+
+    Parameters:
+    - drone_lat: Latitude of the drone (in decimal degrees).
+    - drone_lon: Longitude of the drone (in decimal degrees).
+    - drone_alt: Altitude of the drone (in meters).
+    - drone_hdg: Heading of the drone (in decimal degrees).
+    - gsd: Ground Sampling Distance (in meters per pixel).
+    - image_width: Width of the image (in pixels).
+    - image_height: Height of the image (in pixels).
+    - pixel_x: X-coordinate of the target pixel in the image.
+    - pixel_y: Y-coordinate of the target pixel in the image.
+    - focal_length: Focal length of the camera (in millimeters).
+    - sensor_width: Width of the camera sensor (in millimeters).
+
+    Returns:
+    - (target_lat, target_lon): Latitude and longitude of the target point.
+    """
+    EARTH_RADIUS = 6378137.0
+
+    # Convert image pixel coordinates to normalized camera coordinates
+    cx = image_width / 2 # Principal point of x
+    cy = image_height / 2 # Principal point of y
+
+    # Calculate the focal length in pixels
+    fx = (focal_length / sensor_width) * image_width
+    fy = fx # Assuming square pixels (fx = fy)
+
+    # Calculate the normalized camera coordinates
+    x_n = (pixel_x - cx) / fx
+    y_n = (pixel_y - cy) / fy
+
+    # # Calculate the ground distance from the image center to the target pixel
+    # dx = (pixel_x - image_width / 2) * gsd
+    # dy = (pixel_y - image_height / 2) * gsd
+
+    # Estimate real-world coordinates
+    dx = x_n * gsd * image_width
+    dy = y_n * gsd * image_height
+
+    target_distance = math.sqrt(dx**2 + dy**2 + drone_alt**2)
+    bearing = math.radians(drone_hdg) + math.atan2(dx, dy)
+
+    # Convert ENU (East North Up) coorinate shift
+    delta_x = target_distance * math.cos(bearing)
+    delta_y = target_distance * math.sin(bearing)
+
+    # Convert ground distance to latitude and longitude offsets
+    # target_lat = drone_lat + (dy / EARTH_RADIUS * (180 / math.pi))
+    # target_lon = drone_lon + (dx / (E + (ARTH_RADIUS * math.cos(math.radians(drone_lat))) * (180 / math.pi))
+
+    # ENU -> GPS
+    target_lat = drone_lat + (delta_y / EARTH_RADIUS) * (180 / math.pi)
+    target_lon = drone_lon + (delta_x / (EARTH_RADIUS * math.cos(math.radians(drone_lat)))) * (180 / math.pi)
+
+    return target_lat, target_lon
+
+
+# Function to calculate the distance to the target pixel on the ground using camera parameters and GSD
+def calculate_distance_from_pixel_to_ground(gsd, pixel_x, pixel_y, image_width, image_height, focal_length, sensor_width, drone_alt):
+    """
+    Calculate the distance to the target pixel on the ground in meters using the camera parameters and GSD.
+    """
+    # Calculate the focal length in meters
+    focal_length_m = focal_length / 1000.0
+    
+    # The sensor size in meters (since it's given in millimeters, we divide by 1000)
+    sensor_size_m = sensor_width / 1000.0
+
+    # Field of View in the camera
+    fov_x = (sensor_size_m * drone_alt) / focal_length_m  # Field of view in x direction
+    fov_y = (fov_x * image_height) / image_width  # Field of view in y direction
+    
+    # Find the target pixel's location relative to the image center
+    offset_x = (pixel_x - image_width / 2) * gsd  # In meters
+    offset_y = (pixel_y - image_height / 2) * gsd  # In meters
+
+    return offset_x, offset_y
+
+def monocular_vision(drone_lat, drone_lon, drone_alt, drone_hdg, gsd, image_width, image_height, pixel_x, pixel_y, focal_length, sensor_width):
+    """Calculate the new GPS position after moving based on the target pixel."""
+    
+    # Step 1: Convert the drone's GPS coordinates to UTM
+    easting, northing, zone_number, zone_letter = gps_to_utm(drone_lat, drone_lon)
+    
+    # Step 2: Calculate the ground displacement from the pixel
+    offset_x, offset_y = calculate_distance_from_pixel_to_ground(gsd, pixel_x, pixel_y, image_width, image_height, focal_length, sensor_width, drone_alt)
+    
+    # Step 3: Convert heading to radians
+    heading_rad = math.radians(drone_hdg)
+
+    # Calculate the UTM displacement in the east and north direction
+    delta_easting = offset_x * math.sin(heading_rad) + offset_y * math.cos(heading_rad)
+    delta_northing = offset_x * math.cos(heading_rad) - offset_y * math.sin(heading_rad)
+    
+    # Step 4: Update the drone's UTM position
+    new_easting = easting + delta_easting
+    new_northing = northing + delta_northing
+    
+    # Step 5: Convert the new UTM coordinates back to GPS coordinates
+    new_lat, new_lon = utm_to_gps(new_easting, new_northing, zone_number, zone_letter)
+    
+    return new_lat, new_lon
+
+def calculate_gsd(focal_length, sensor_width, image_width, altitude):
+    """
+    Calculate the Ground Sampling Distance (GSD) in meters per pixel.
+
+    Parameters:
+    - focal_length: Focal length of the camera (in millimeters).
+    - sensor_width: Width of the camera sensor (in millimeters).
+    - image_width: Width of the image (in pixels).
+    - altitude: Altitude of the drone (in meters).
+
+    Returns:
+    - gsd: Ground Sampling Distance (in meters per pixel).
+    
+    Ex: Raspberry Pi v2 Camera Module:
+    Focal length: 3.04 mm
+    Sensor width: 3.68 mm
+    Image width: 3280 pixels
+    Altitude: 10 meters
+    Source: (https://www.raspberrypi.com/documentation/accessories/camera.html)
+    """
+    # Convert focal length and sensor width to meters
+    focal_length_m = focal_length / 1000.0
+    sensor_width_m = sensor_width / 1000.0
+
+    # Calculate GSD
+    gsd = (altitude * sensor_width_m) / (focal_length_m * image_width)
+    return gsd
+
+# Function to convert GPS (latitude, longitude) to UTM coordinates
+def gps_to_utm(lat, lon):
+    """Convert GPS (latitude, longitude) to UTM coordinates."""
+    return utm.from_latlon(lat, lon)
+
+# Function to convert UTM coordinates back to GPS (latitude, longitude)
+def utm_to_gps(easting, northing, zone_number, zone_letter):
+    """Convert UTM coordinates back to GPS (latitude, longitude)."""
+    return utm.to_latlon(easting, northing, zone_number, zone_letter)
+
+# TESTING
+
+# Monocular vision test
+if __name__ == "__main__":
+    drone_lat = 34.057283 # Latitude is positive for North
+    drone_lon = -117.817766 # Longitude is negative for West
+    drone_alt = 10 # Altitude in meters
+    drone_hdg = 0 # Heading in degrees
+    image_width = 1920 # Image width in pixels
+    image_height = 1080 # Image height in pixels
+    pixel_x = 2052.5 # Target pixel x-coordinate
+    pixel_y = 671.0 # Target pixel y-coordinate
+
+    # Calculate GSD test
+    focal_length = 2.12 # Focal length in millimeters
+    sensor_width = 4.80 # Sensor width in millimeters
+
+    gsd = calculate_gsd(focal_length, sensor_width, image_width, drone_alt)
+    print("Ground Sampling Distance:", gsd, "meters per pixel")
+    
+    new_lat, new_lon = move_drone_position(
+        drone_lat, drone_lon, drone_alt, drone_hdg,
+        gsd, image_width, image_height,
+        pixel_x, pixel_y, focal_length, sensor_width
+    )
+
+    print(f"New GPS coordinates: Latitude = {new_lat}, Longitude = {new_lon}")
+
 
 

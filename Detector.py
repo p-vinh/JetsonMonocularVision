@@ -13,25 +13,24 @@ import atexit
 import time
 import sys
 from threading import Thread, Lock
+#from Jetson_Camera_DUMMY import Jetson_Camera
+#from Jetson_Camera_pre import Jetson_Camera
 from Jetson_Camera_2 import Jetson_Camera
 from MavLink import MavLink
 from DetectorThreadRunner import DetectorThreadRunner
 from Load_Config import Config
-from Fuse import Fuse
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class Detector:
-    def __init__(self, left_input, right_input, left_save_name, right_save_name, dir_name, GPS_node: MavLink,
-                 camera_pitch, spread=0.8636, fov=62.2, threshold_fuse=None, flip=False):
+    def __init__(self, left_input, left_save_name, dir_name, GPS_node: MavLink,
+                 camera_pitch, spread=0.8636, sensor_width=3.04, fov=3.04):
         self.detection_timestamp = 0
-        self.persons_cords = None
-        self.logfile = open("Detector_last_log.log", "w")
-        self.t_runner = DetectorThreadRunner(Jetson_Camera(str(left_input), dir_name, left_save_name, flip),
-                                             Jetson_Camera(str(right_input), dir_name, right_save_name, flip),
-                                             pitch=camera_pitch, spread=spread, fov=fov, t_fuse=threshold_fuse, GPS_node=GPS_node,
-                                             log_file=self.logfile)
-        if flip:
-            self.t_runner.swap_cameras()
+        self.weed_cords = None
+        self.t_runner = DetectorThreadRunner(Jetson_Camera(str(left_input), dir_name, left_save_name),
+                                             pitch=camera_pitch, spread=spread, sensor_width=sensor_width, fov=fov, GPS_node=GPS_node)
 
         self.isRunning = True
         self.thread = Thread(target=self.loop, args=())
@@ -45,7 +44,7 @@ class Detector:
         while self.isRunning:
             self.t_runner.thread_loop()
             self.t_lock.acquire()
-            self.persons_cords = self.t_runner.person_loc
+            self.weed_cords = self.t_runner.weed_loc
             self.detection_timestamp = self.t_runner.detection_time
             self.t_lock.release()
 
@@ -55,7 +54,7 @@ class Detector:
     def get_person_loc(self):
         temp = None
         self.t_lock.acquire()
-        temp = self.persons_cords
+        temp = self.weed_cords
         self.t_lock.release()
         return temp
 
@@ -70,7 +69,7 @@ class Detector:
         temp1 = None
         temp2 = None
         self.t_lock.acquire()
-        temp1 = self.persons_cords
+        temp1 = self.weed_cords
         temp2 = self.detection_timestamp
         self.t_lock.release()
         return temp1, temp2
@@ -79,8 +78,8 @@ class Detector:
         self.isRunning = False
         self.thread.join()
         self.t_runner.kill()
-        self.logfile.write("Detector thread killed, closing the file.")
-        self.logfile.close()
+        #self.logfile.write("Detector thread killed, closing the file.")
+        #self.logfile.close()
 
 
 def kill(core):
@@ -90,6 +89,6 @@ def kill(core):
 if __name__ == '__main__':
     config_dict = Config(sys.argv[1])
     GPS = MavLink(config_dict.main_dict['MAVLINK']['directory'], config_dict.main_dict['MAVLINK']['baud'])
-    fuse = Fuse(config_dict=config_dict.main_dict['DETECTION_FUSE'])
-    detector = Detector("0", "1", "test_left", "test_left", "./Recordings", fuse, GPS, 0, flip=True)
+    #fuse = Fuse(config_dict=config_dict.main_dict['DETECTION_FUSE'])
+    #detector = Detector("0", "1", "test_left", "test_left", "./Recordings", fuse, GPS, 0, flip=True)
     atexit.register(kill, detector)

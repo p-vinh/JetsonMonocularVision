@@ -1,5 +1,4 @@
 Recordings/*.avi
-*.log
 Jeatson_Libruary_2023-09-27.zip
 Jetson Libruary.zip
 Jetson_Lib_23_11_8.zip
@@ -8,5 +7,10 @@ Jetson_Lib_23_11_8.zip
 *.conf
 !Configs/default.conf
 !Configs/Router_network.conf
-jetsonvenv/*
+!Configs/ZedConfig.conf
 .env
+run_project.sh
+
+
+.vscode
+__pycache__/
