@@ -8,7 +8,8 @@ from sahi import AutoDetectionModel
 from threading import Thread
 import numpy
 from RecordingInput import RecordingInput
-
+from sahi.utils.cv import visualize_prediction
+import numpy as np
 
 class StrawberryDetector:
     def __init__(self, camera, log_file):
@@ -30,6 +31,7 @@ class StrawberryDetector:
     def thread_loop(self):
         while self.isRunning:
             image = None
+            image_np = None
             detections = None
             
             '''
@@ -38,29 +40,41 @@ class StrawberryDetector:
                 pass
             jetson_image = self.camera.img
             '''
-            image = self.camera.get_frame()
-            while image is None:
-                image = self.camera.get_frame()
-            image = Image.fromarray(image)
+            image_np = self.camera.get_frame()
+            while image_np is None:
+                image_np = self.camera.get_frame()
+            image = Image.fromarray(image_np)
             
             try:
                 detections = get_sliced_prediction(
                 	image=image,
                 	detection_model=self.d_net,
                 	postprocess_class_agnostic=True,
-                	slice_height=640,
-                	slice_width=640,
+                    slice_height=360,
+                    slice_width=480,
                 	overlap_height_ratio=0.2,
                 	overlap_width_ratio=0.2
                 )
                 detections.export_visuals(export_dir="Images", file_name=str(self.counter))
-                # TODO This (line 64) add a frame to the video without annotations.
-                #      Use 'visualize_prediction' from 'sahi.cv' to add annotations to the frame.
-                self.camera.save_frame(numpy.ascontiguousarray(detections.image))
+                bounding_boxes = []
+                class_ids = []
+                
+                for detections in detections.object_prediction_list:
+                    bb = detections.bbox
+                    coords = [bb.minx, bb.miny, bb.maxx, bb.maxy]
+                    bounding_boxes.append(coords)
+                    class_ids.append(detections.category.id)
+
+                annotated = visualize_prediction(
+                    image=image_np, 
+                    boxes= bounding_boxes,
+                    classes= class_ids
+                )
+                self.camera.save_frame(numpy.ascontiguousarray(annotated["image"]))
                 print("Image number " + str(self.counter) + " exported")
                 self.counter += 1
             except Exception as e:
-                print("Error: ", e)
+                print("Error in detection: " + str(e.with_traceback()))
 
     def kill(self):
         self.isRunning = False
