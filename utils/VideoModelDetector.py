@@ -14,12 +14,12 @@ class StrawberryDetector:
     def __init__(self, camera, log_file):
         self.camera = camera
         self.d_net = AutoDetectionModel.from_pretrained(
-        	model_type="yolo11",
-        	model_path="../YOLOv11L_Strawberry/weights/best.pt",
+        	model_type="yolov8",
+        	model_path="../model/weights.pt",
         	confidence_threshold=0.4,
         	device="cuda:0"
         )
-        self.counter = 0;
+        self.counter = 0
         self.log_f = log_file
         self.isRunning = True
         self.thread = Thread(target=self.thread_loop, args=())
@@ -58,7 +58,7 @@ class StrawberryDetector:
                 #      Use 'visualize_prediction' from 'sahi.cv' to add annotations to the frame.
                 self.camera.save_frame(numpy.ascontiguousarray(detections.image))
                 print("Image number " + str(self.counter) + " exported")
-                self.counter += 1;
+                self.counter += 1
             except Exception as e:
                 print("Error: ", e)
 
@@ -70,7 +70,7 @@ def kill(core):
     core.kill()
 
 if __name__ == '__main__':
-    log_file = open("Strawberry_Health_log.log", "w")
+    log_file = open("Detect_last.log", "w")
     # camera = Jetson_Camera("0", "./Recordings", "Strawberry_Health", False)
     camera = RecordingInput("./Recordings", "left_camera.avi", "./Recordings")
     detector = StrawberryDetector(camera, log_file)
