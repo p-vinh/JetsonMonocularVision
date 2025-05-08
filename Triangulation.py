@@ -237,23 +237,24 @@ def utm_to_gps(easting, northing, zone_number, zone_letter):
 
 # Monocular vision test
 if __name__ == "__main__":
-    drone_lat = 34.057283 # Latitude is positive for North
-    drone_lon = -117.817766 # Longitude is negative for West
-    drone_alt = 10 # Altitude in meters
-    drone_hdg = 0 # Heading in degrees
+    drone_lat = 34.0434798 # Latitude is positive for North
+    drone_lon = -117.81161689999999 # Longitude is negative for West
+    drone_alt = 6.101 # Altitude in meters
+    drone_hdg = 310.51 # Heading in degrees
     image_width = 1920 # Image width in pixels
     image_height = 1080 # Image height in pixels
-    pixel_x = 2052.5 # Target pixel x-coordinate
-    pixel_y = 671.0 # Target pixel y-coordinate
+    pixel_x = 426.6366968154907 # Target pixel x-coordinate
+    pixel_y = 782.712043762207 # Target pixel y-coordinate
 
     # Calculate GSD test
-    focal_length = 2.12 # Focal length in millimeters
-    sensor_width = 4.80 # Sensor width in millimeters
+    focal_length = 16 # Focal length in millimeters
+    sensor_width = 15.6 # Sensor width in millimeters
+    sensor_height = 23.5
 
     gsd = calculate_gsd(focal_length, sensor_width, image_width, drone_alt)
     print("Ground Sampling Distance:", gsd, "meters per pixel")
     
-    new_lat, new_lon = move_drone_position(
+    new_lat, new_lon = monocular_vision(
         drone_lat, drone_lon, drone_alt, drone_hdg,
         gsd, image_width, image_height,
         pixel_x, pixel_y, focal_length, sensor_width
