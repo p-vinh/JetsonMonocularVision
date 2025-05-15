@@ -48,14 +48,10 @@ JetsonMonocularVision is a Python-based computer vision project designed for NVI
 
 ## Usage
 
-1. **Configure Settings**:
-
-   Edit the `args_for_sahi.yaml` file to set parameters such as camera indices, detection thresholds, and model paths.
-
-2. **Run the Main Script**:
+1. **Run the Main Script**:
 
    ```bash
-   python UAV_Code.py
+   python UAV_Code.py Configs/[CONFIG].conf
    ```
 
 
