@@ -1,6 +1,6 @@
 # JetsonMonocularVision
 
-JetsonMonocularVision is a Python-based computer vision project designed for NVIDIA Jetson platforms. It utilizes two cameras to detect objects and compute their distance and GPS location. The system employs triangulation techniques to determine the distance from the drone to the object and then calculates the object's GPS coordinates using the drone's GPS data.
+JetsonMonocularVision is a Python-based computer vision project designed for NVIDIA Jetson platforms. It utilizes a single Sony camera to detect objects and compute their distance and GPS location. The system employs triangulation techniques to determine the distance from the drone to the object and then calculates the object's GPS coordinates using the drone's GPS data.
 
 ## Features
 
